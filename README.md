@@ -91,8 +91,9 @@ Zaman "aktif dakika" ile ölçülür: oyunun aktif saatlerde oynandığı her da
 
 1. **Süre:** `MinDays` ile `MaxDays` arasında rastgele bir gün sayısı, günlük aktif dakikayla çarpılır. Sonra kalan başarımların oranıyla ölçeklenir; yarısı açılmış bir oyuna yaklaşık yarı süre ayrılır.
 2. **Sıra:** Her başarıma `1,35 · ln(yüzde) + Gumbel gürültüsü` değerinde bir anahtar verilir ve büyükten küçüğe sıralanır. Bu, yüzdesi yüksek olanları öne çeken ama sabit olmayan bir sıra verir.
-3. **Aralıklar:** Bir başarımdan önceki bekleme `1 + ln(100 / yüzde)` ile orantılıdır ve log-normal gürültü eklenir. Aralıklar toplam süreyi dolduracak şekilde ölçeklenir ve hiçbiri `MinGapMinutes` değerinden kısa olmaz.
-4. **Her dakika:** Oynanan ve uygun olan oyunlar (en fazla `MaxActiveGames`) bir dakika ilerler. Vakti gelmiş en gecikmiş tek başarım açılır; en kısa aralık ve günlük sınır her zaman korunur.
+3. **Kademeler:** "30 maça gir" ile "100 maça gir" gibi kademeli başarımlar her zaman küçükten büyüğe açılır. Aynı sayaca bağlı olanlar sayacın hedefine göre, aynı cümlenin farklı sayılı halleri de içindeki sayıya göre sıralanır.
+4. **Aralıklar:** Bir başarımdan önceki bekleme `1 + ln(100 / yüzde)` ile orantılıdır ve log-normal gürültü eklenir. Aralıklar toplam süreyi dolduracak şekilde ölçeklenir ve hiçbiri `MinGapMinutes` değerinden kısa olmaz.
+5. **Her dakika:** Oynanan ve uygun olan oyunlar (en fazla `MaxActiveGames`) bir dakika ilerler. Vakti gelmiş en gecikmiş tek başarım açılır; en kısa aralık ve günlük sınır her zaman korunur.
 
 Bir başarım açılmadan hemen önce Steam'deki güncel durum tekrar okunur. Başarım zaten açıksa (örneğin oyunda açmışsan) atlanır. Steam hata verirse oyun 30 dakika bekletilir; aynı başarım 3 kez başarısız olursa atlanır.
 

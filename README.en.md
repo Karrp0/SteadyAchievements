@@ -97,8 +97,9 @@ Time is measured in "active minutes": every minute in which the game is played i
 
 1. **Budget:** a random number of days between `MinDays` and `MaxDays`, times the active minutes per day. This is then scaled by the share of achievements still left, so a half-finished game gets about half the time.
 2. **Order:** each achievement gets the key `1.35 · ln(percent) + Gumbel noise`, and achievements are sorted from the largest key to the smallest. This favours common achievements without fixing the order.
-3. **Gaps:** the wait before an achievement is proportional to `1 + ln(100 / percent)`, with log-normal noise. The gaps are scaled to fill the budget, and none is shorter than `MinGapMinutes`.
-4. **Every minute:** the eligible games being played (up to `MaxActiveGames`) advance one minute. The single most overdue achievement unlocks, always respecting the minimum gap and the daily cap.
+3. **Tiers:** tiered achievements such as "Play 30 matches" and "Play 100 matches" always unlock from the smallest to the largest. Achievements driven by the same stat are ordered by the stat's target; the same sentence with different numbers is ordered by its number.
+4. **Gaps:** the wait before an achievement is proportional to `1 + ln(100 / percent)`, with log-normal noise. The gaps are scaled to fill the budget, and none is shorter than `MinGapMinutes`.
+5. **Every minute:** the eligible games being played (up to `MaxActiveGames`) advance one minute. The single most overdue achievement unlocks, always respecting the minimum gap and the daily cap.
 
 Right before an unlock, the account's current state is read from Steam again. If the achievement is already unlocked (for example because you earned it in game), it is skipped. If Steam returns an error, the game waits 30 minutes; if the same achievement fails 3 times, it is skipped.
 

@@ -114,6 +114,9 @@ internal static class Planner {
 		// Order: larger key first; key = Sharpness * ln(p) + Gumbel noise
 		List<(AchievementDef Def, double Percent)> ordered = items.Select(item => (item, Key: (Sharpness * Math.Log(item.Percent)) + Gumbel(random))).OrderByDescending(static x => x.Key).Select(static x => x.item).ToList();
 
+		// Tiered achievements ("30 matches" before "100 matches") always keep their natural order
+		ordered = Chains.Repair(ordered, static item => item.Def);
+
 		double[] gaps = ordered.Select(item => (1 + Math.Log(100 / item.Percent)) * Math.Exp(GapNoise * Normal(random))).ToArray();
 		double scale = budget / gaps.Sum();
 		List<PlanStep> steps = new(ordered.Count);

@@ -156,6 +156,48 @@ public sealed class PlannerTests {
 }
 
 [TestClass]
+public sealed class ChainTests {
+	private static AchievementDef Ach(string api, string name, string description, uint? stat = null, uint max = 0) => new(api, name, description, 1, 0, false, false, false, stat, max, "", "");
+
+	[TestMethod]
+	public void TiersAlwaysInOrder() {
+		List<AchievementDef> schema = [
+			Ach("m100", "Veteran", "Play 100 matches"),
+			Ach("m30", "Regular", "Play 30 matches"),
+			Ach("m1000", "Legend", "Play 1,000 matches"),
+			Ach("k50", "Killer", "", stat: 7, max: 50),
+			Ach("k10", "Rookie", "", stat: 7, max: 10),
+			Ach("x", "Other", "Find the secret"),
+			Ach("lvl20", "Level 20", ""),
+			Ach("lvl5", "Level 5", "")
+		];
+
+		// Rarer tiers get higher percentages on purpose, so the random order would often be wrong
+		Dictionary<string, double> percents = new() { ["m1000"] = 60, ["m100"] = 40, ["m30"] = 5, ["k50"] = 50, ["k10"] = 2, ["x"] = 20, ["lvl20"] = 70, ["lvl5"] = 1 };
+
+		for (int seed = 0; seed < 300; seed++) {
+			GamePlan plan = Planner.Create(1, "G", schema, percents, new BotSettings { MinDays = 30, MaxDays = 30, MinGapMinutes = 15 }, 900, new Random(seed), DateTime.UtcNow);
+			Dictionary<string, long> due = plan.Steps.ToDictionary(static s => s.ApiName, static s => s.DueMinute);
+
+			Assert.IsTrue(due["m30"] < due["m100"] && due["m100"] < due["m1000"], $"matches, seed {seed}");
+			Assert.IsTrue(due["k10"] < due["k50"], $"stat, seed {seed}");
+			Assert.IsTrue(due["lvl5"] < due["lvl20"], $"names, seed {seed}");
+		}
+	}
+
+	[TestMethod]
+	[DataRow("Play 1,000 matches", "play # matches")]
+	[DataRow("Play 1.000 matches", "play # matches")]
+	[DataRow("Reach level 30 in 2 days", "reach level # in # days")]
+	[DataRow("Find the secret", null)]
+	[DataRow("", null)]
+	public void Templates(string text, string? expected) => Assert.AreEqual(expected, Chains.Template(text));
+
+	[TestMethod]
+	public void FirstNumberJoinsThousands() => Assert.AreEqual(1000d, Chains.FirstNumber("Play 1,000 matches"));
+}
+
+[TestClass]
 public sealed class EngineTests {
 	private static GamePlan PlanWith(uint appId, DateTime created, params long[] dues) => new() {
 		AppId = appId,
