@@ -172,19 +172,21 @@ a { color: inherit; }
 	grid-template-columns: repeat(3, auto);
 	gap: .25em;
 	min-width: 0;
-	padding: .5em;
+	padding: .75em;
 }
 
 .dropdown__panel--languages button {
+	display: grid;
+	place-items: center;
+	width: 3.4em;
+	height: 2.8em;
 	border: 0;
 	border-radius: var(--radius);
 	background: transparent;
-	color: #fff;
-	padding: .4em .7em;
 	cursor: pointer;
-	white-space: nowrap;
-	text-align: left;
 }
+
+.flag { width: 30px; height: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
 
 .dropdown__panel--languages button:hover, .dropdown__panel--languages button.active { background: var(--color-theme-dark); }
 .dropdown__label { font-size: .85em; opacity: .85; margin-bottom: .4em; }
@@ -497,6 +499,5 @@ p.form-item__description { margin: -.5em 0 1em; }
 	.row__actions { justify-content: flex-start; }
 	.save-bar { margin: 0 -.75em -.75em; }
 	.facts th { width: 8em; }
-	.dropdown__panel--languages { grid-template-columns: repeat(2, auto); }
 	.footer { flex-wrap: wrap; gap: .75em 1.25em; }
 }

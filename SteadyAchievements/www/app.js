@@ -251,12 +251,41 @@
 
 	async function refreshStatus() {
 		if (!state.bot) return;
+		refreshAsf();
 		try {
 			state.status = await api(encodeURIComponent(state.bot));
 			renderStatus();
 		} catch (e) {
 			if (e.status !== 401 && e.status !== 403) console.warn(e);
 		}
+	}
+
+	// ASF's own process info (memory, start time, version), the same numbers ASF's panel shows
+	async function refreshAsf() {
+		try {
+			state.asf = await request(`${ASF_API}/ASF`, { quiet: true });
+			renderAsf();
+		} catch { /* shown as "—" */ }
+	}
+
+	function uptime(seconds) {
+		const d = Math.floor(seconds / 86400);
+		const hh = Math.floor((seconds % 86400) / 3600);
+		const m = Math.floor((seconds % 3600) / 60);
+		const s = Math.floor(seconds % 60);
+		const part = (value, unit) => `${value} ${t(`up.${unit}`)}`;
+		if (d > 0) return `${part(d, "d")} ${part(hh, "h")}`;
+		if (hh > 0) return `${part(hh, "h")} ${part(m, "m")}`;
+		return `${part(m, "m")} ${part(s, "s")}`;
+	}
+
+	function renderAsf() {
+		const asf = state.asf;
+		if (!asf) return;
+		$("#s-memory").textContent = `${new Intl.NumberFormat(state.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(asf.MemoryUsage / 1024)} MB`;
+		$("#s-uptime").textContent = uptime(Math.max(0, (Date.now() - new Date(asf.ProcessStartTime).getTime()) / 1000));
+		const plugin = state.status ? `SteadyAchievements ${state.status.PluginVersion} · ` : "";
+		$("#version").textContent = `${plugin}ASF ${asf.Version} - ${asf.BuildVariant}`;
 	}
 
 	function setText(id, text, cls = "") {
@@ -283,7 +312,7 @@
 		$("#s-today").textContent = `${s.UnlocksToday} / ${s.MaxPerDay}`;
 		$("#s-next").textContent = nextEta ? relative(nextEta) : "—";
 		$("#s-mode").textContent = s.Simulation ? t("stat.sim") : t("stat.real");
-		$("#version").textContent = `SteadyAchievements ${s.PluginVersion}`;
+		renderAsf();
 
 		// Overview
 		$("#trimmed").hidden = !s.TrimmedRuntime;
@@ -550,10 +579,18 @@
 		state.timer = setInterval(() => {
 			if (!document.hidden && state.page !== "settings") refreshStatus();
 		}, REFRESH_MS);
+
+		// Uptime counts every second, like in ASF's panel
+		clearInterval(state.clock);
+		state.clock = setInterval(() => { if (!document.hidden) renderAsf(); }, 1000);
 	}
 
 	function build() {
-		$("#lang-menu").replaceChildren(...LANGUAGES.map(([code, name]) => h("button", { type: "button", "data-locale": code, onclick: () => setLocale(code) }, name)));
+		$("#lang-menu").replaceChildren(...LANGUAGES.map(([code, name]) => {
+			const button = h("button", { type: "button", "data-locale": code, title: name, "aria-label": name, onclick: () => setLocale(code) });
+			button.innerHTML = flagSvg(code);
+			return button;
+		}));
 		$("#swatches").replaceChildren(...THEMES.map(([name, color]) => h("button", { type: "button", class: "swatch", "data-theme": name, title: name, style: `background:${color}`, onclick: () => saveLook({ theme: name }) })));
 		renderIcons();
 	}

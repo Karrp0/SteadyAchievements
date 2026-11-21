@@ -16,8 +16,42 @@ window.ICONS = {
 	clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
 	calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
 	flask: '<path d="M9.5 3.5h5M10.5 3.5v5.8L5.3 18a2 2 0 0 0 1.7 3h10a2 2 0 0 0 1.7-3l-5.2-8.7V3.5"/><path d="M7.5 15h9"/>',
-	code: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>'
+	code: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>',
+	memory: '<rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/>',
+	uptime: '<path d="M7 3h10M7 21h10M8 3v3.5a4 4 0 0 0 1.6 3.2L12 12l2.4-2.3A4 4 0 0 0 16 6.5V3M8 21v-3.5a4 4 0 0 1 1.6-3.2L12 12l2.4 2.3a4 4 0 0 1 1.6 3.2V21"/>',
+	branch: '<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10M18 9c0 5-6 4-11.5 8.5"/>'
 };
+
+// Small flags (30×20) for the language menu, drawn here so no image files are needed
+(() => {
+	const star = (cx, cy, outer, inner, angle = -90) => {
+		const points = [];
+		for (let i = 0; i < 10; i++) {
+			const r = i % 2 === 0 ? outer : inner;
+			const a = ((angle + (i * 36)) * Math.PI) / 180;
+			points.push(`${(cx + (r * Math.cos(a))).toFixed(2)},${(cy + (r * Math.sin(a))).toFixed(2)}`);
+		}
+		return `<polygon points="${points.join(" ")}"/>`;
+	};
+	const bands = (colors, vertical = false) => colors.map((c, i) => vertical
+		? `<rect x="${(30 / colors.length) * i}" width="${30 / colors.length + 0.1}" height="20" fill="${c}"/>`
+		: `<rect y="${(20 / colors.length) * i}" width="30" height="${20 / colors.length + 0.1}" fill="${c}"/>`).join("");
+	const usStripes = Array.from({ length: 13 }, (_, i) => `<rect y="${(i * 20) / 13}" width="30" height="${20 / 13 + 0.05}" fill="${i % 2 ? "#fff" : "#b22234"}"/>`).join("");
+
+	window.FLAGS = {
+		"tr-TR": `<rect width="30" height="20" fill="#e30a17"/><circle cx="11" cy="10" r="5" fill="#fff"/><circle cx="12.25" cy="10" r="4" fill="#e30a17"/><g fill="#fff">${star(17.4, 10, 2.3, 0.95, 180)}</g>`,
+		"en-US": `${usStripes}<rect width="13" height="${(20 / 13) * 7}" fill="#3c3b6e"/>`,
+		"de-DE": bands(["#000", "#dd0000", "#ffce00"]),
+		"es-ES": `<rect width="30" height="20" fill="#aa151b"/><rect y="5" width="30" height="10" fill="#f1bf00"/>`,
+		"fr-FR": bands(["#002395", "#fff", "#ed2939"], true),
+		"pl-PL": bands(["#fff", "#dc143c"]),
+		"pt-BR": `<rect width="30" height="20" fill="#009c3b"/><polygon points="15,2 28,10 15,18 2,10" fill="#ffdf00"/><circle cx="15" cy="10" r="4.3" fill="#002776"/>`,
+		"ru-RU": bands(["#fff", "#0039a6", "#d52b1e"]),
+		"zh-CN": `<rect width="30" height="20" fill="#de2910"/><g fill="#ffde00">${star(5, 5, 3, 1.15)}${star(10, 2, 1, 0.38)}${star(12, 4, 1, 0.38)}${star(12, 7, 1, 0.38)}${star(10, 9, 1, 0.38)}</g>`
+	};
+
+	window.flagSvg = code => `<svg class="flag" viewBox="0 0 30 20" aria-hidden="true">${window.FLAGS[code] || ""}</svg>`;
+})();
 
 window.renderIcons = (root = document) => {
 	for (const el of root.querySelectorAll("i[data-icon]")) {

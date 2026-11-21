@@ -590,3 +590,23 @@ window.I18N = {
 		codes.forEach((code, i) => { window.I18N[locale][`why.${code}`] = texts[i]; });
 	}
 })();
+
+// Side menu: ASF memory usage and uptime
+(() => {
+	const extra = {
+		"tr-TR": ["Bellek kullanımı", "Çalışma süresi", "G", "SA", "DK", "SN"],
+		"en-US": ["Memory usage", "Uptime", "D", "H", "M", "S"],
+		"de-DE": ["Speicher", "Laufzeit", "T", "Std", "Min", "S"],
+		"es-ES": ["Memoria", "Tiempo activo", "D", "H", "Min", "S"],
+		"fr-FR": ["Mémoire", "Temps actif", "J", "H", "Min", "S"],
+		"pl-PL": ["Pamięć", "Czas działania", "D", "G", "Min", "S"],
+		"pt-BR": ["Memória", "Tempo ativo", "D", "H", "Min", "S"],
+		"ru-RU": ["Память", "Время работы", "Д", "Ч", "МИН", "С"],
+		"zh-CN": ["内存占用", "运行时间", "天", "时", "分", "秒"]
+	};
+	const keys = ["stat.memory", "stat.uptime", "up.d", "up.h", "up.m", "up.s"];
+
+	for (const [locale, texts] of Object.entries(extra)) {
+		keys.forEach((key, i) => { window.I18N[locale][key] = texts[i]; });
+	}
+})();
