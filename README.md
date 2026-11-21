@@ -47,16 +47,42 @@
 
 ## Kurulum
 
-1. [Releases](../../releases) sayfasından `SteadyAchievements.zip` dosyasını indir. İstersen `SHA512SUMS` ile `sha512sum -c SHA512SUMS --ignore-missing` komutuyla doğrula.
-2. Zip'teki `SteadyAchievements` klasörünü ASF'nin `plugins/` klasörüne çıkar.
-3. ASF'yi yeniden başlat. Kayıtta `SteadyAchievements ... loaded` satırını görmelisin.
-4. Tarayıcıda `https://<asf-adresin>/steady/` adresini aç (sondaki `/` gerekli) ve ASF'nin IPC şifresini gir.
+1. **İndir.** [Releases](../../releases) sayfasından en son sürümün `SteadyAchievements.zip` dosyasını indir.
+   İstersen dosyanın bozulmadığını `SHA512SUMS` ile doğrula:
+   - Linux / macOS: `sha512sum -c SHA512SUMS --ignore-missing`
+   - Windows (PowerShell): `(Get-FileHash SteadyAchievements.zip -Algorithm SHA512).Hash` çıktısını `SHA512SUMS` içindeki değerle karşılaştır.
+2. **Çıkar.** Zip'in içindeki `SteadyAchievements` klasörünü ASF'nin `plugins` klasörüne çıkar. `plugins` klasörü, ASF programının (`ArchiSteamFarm.exe` / `ArchiSteamFarm`) yanındadır. Sonuç şöyle görünmeli:
+   ```
+   ASF klasörü/
+   ├── config/
+   ├── plugins/
+   │   └── SteadyAchievements/
+   │       ├── SteadyAchievements.dll
+   │       ├── SteadyAchievements.deps.json
+   │       └── www/
+   └── ArchiSteamFarm(.exe)
+   ```
+3. **ASF'yi yeniden başlat.** Kayıtta (konsol ya da `log.txt`) `SteadyAchievements ... loaded` satırı görünmeli. ASF, eklentiyi her botta otomatik olarak çalıştırır.
+4. **Paneli aç.** Panel ASF'nin web arayüzü (IPC) üzerinden çalışır. IPC varsayılan olarak açıktır.
+   - ASF aynı bilgisayardaysa: `http://127.0.0.1:1242/steady/`
+   - ASF'yi kendi alan adınla yayınladıysan: `https://<asf-adresin>/steady/`
+
+   Sondaki `/` gerekli. ASF'de `IPCPassword` belirlediysen şifre sorulur; ASF'nin kendi paneline girdiysen aynı şifre otomatik kullanılır. İnternete açık bir ASF'de mutlaka bir `IPCPassword` belirle.
+
+### Güncelleme
+
+`plugins/SteadyAchievements` klasörünün içeriğini yeni sürümün dosyalarıyla değiştir ve ASF'yi yeniden başlat. Ayarlar, planlar ve geçmiş `config/SteadyAchievements/` klasöründe durur; güncellemede silinmez.
+
+### Kaldırma
+
+ASF'yi durdur, `plugins/SteadyAchievements` klasörünü sil. Ayarları ve geçmişi de silmek istersen `config/SteadyAchievements` klasörünü de sil.
 
 ## İlk kullanım
 
-1. **Ayarlar** sekmesinde aktif saatleri ve temposu belirle.
+1. Sol menüden **Eklenti Ayarları** sayfasını aç; aktif saatleri ve tempoyu belirle.
 2. Birkaç gün **simülasyonda** bırak. Kayıtta `[Steady] [Simülasyon] Açılacaktı: ...` satırlarını, panelde de planları göreceksin.
 3. Memnunsan **Gerçek** modunu seçip kaydet. Simülasyonda yapılan ilerleme silinir ve planlar hesabının gerçek durumundan yeniden kurulur.
+4. İstersen **Saat Kasma** sayfasından ASF'nin saat kastığı oyunları kütüphanenden seç.
 
 ## Ayarlar
 

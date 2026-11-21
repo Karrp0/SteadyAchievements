@@ -53,16 +53,42 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
 
 ## Installation
 
-1. Download `SteadyAchievements.zip` from [Releases](../../releases). Optionally verify it with `sha512sum -c SHA512SUMS --ignore-missing`.
-2. Extract the `SteadyAchievements` folder from the zip into ASF's `plugins/` folder.
-3. Restart ASF. The log should show `SteadyAchievements ... loaded`.
-4. Open `https://<your-asf>/steady/` (the trailing `/` is required) and enter ASF's IPC password.
+1. **Download.** Get `SteadyAchievements.zip` of the latest version from [Releases](../../releases).
+   Optionally check that the file is intact with `SHA512SUMS`:
+   - Linux / macOS: `sha512sum -c SHA512SUMS --ignore-missing`
+   - Windows (PowerShell): compare the output of `(Get-FileHash SteadyAchievements.zip -Algorithm SHA512).Hash` with the value in `SHA512SUMS`.
+2. **Extract.** Extract the `SteadyAchievements` folder from the zip into ASF's `plugins` folder, which sits next to the ASF program (`ArchiSteamFarm.exe` / `ArchiSteamFarm`). The result should look like this:
+   ```
+   ASF folder/
+   ├── config/
+   ├── plugins/
+   │   └── SteadyAchievements/
+   │       ├── SteadyAchievements.dll
+   │       ├── SteadyAchievements.deps.json
+   │       └── www/
+   └── ArchiSteamFarm(.exe)
+   ```
+3. **Restart ASF.** The log (console or `log.txt`) should show `SteadyAchievements ... loaded`. ASF runs the plugin for every bot automatically.
+4. **Open the panel.** The panel runs on ASF's web interface (IPC), which is on by default.
+   - ASF on the same computer: `http://127.0.0.1:1242/steady/`
+   - ASF published on your own domain: `https://<your-asf>/steady/`
+
+   The trailing `/` is required. If you set an `IPCPassword` in ASF, the panel asks for it; if you are signed in to ASF's own panel, that password is used automatically. Always set an `IPCPassword` on an ASF reachable from the internet.
+
+### Updating
+
+Replace the contents of `plugins/SteadyAchievements` with the new version's files and restart ASF. Settings, plans and history live in `config/SteadyAchievements/` and are kept.
+
+### Uninstalling
+
+Stop ASF and delete `plugins/SteadyAchievements`. To remove the settings and history as well, delete `config/SteadyAchievements` too.
 
 ## First steps
 
-1. In **Settings**, choose your active hours and pace.
+1. Open **Plugin Settings** from the side menu and choose your active hours and pace.
 2. Leave it in **simulation** for a few days. You will see `[Steady] [Simulation] Would unlock ...` lines in the log and the plans in the panel.
 3. When you are happy with it, choose **Real** and save. Simulated progress is discarded and plans are rebuilt from your account's real state.
+4. Optionally pick the games ASF idles for hours from your library on the **Hour Boosting** page.
 
 ## Settings
 
