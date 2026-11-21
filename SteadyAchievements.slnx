@@ -1,0 +1,12 @@
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug" />
+		<BuildType Name="DebugFast" />
+		<BuildType Name="Release" />
+	</Configurations>
+
+	<Project Path="ArchiSteamFarm/ArchiSteamFarm/ArchiSteamFarm.csproj" />
+
+	<Project Path="SteadyAchievements/SteadyAchievements.csproj" />
+	<Project Path="SteadyAchievements.Tests/SteadyAchievements.Tests.csproj" />
+</Solution>

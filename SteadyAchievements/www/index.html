@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="tr">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>SteadyAchievements</title>
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2322c55e'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<header class="top">
+		<div class="brand">
+			<span class="logo" aria-hidden="true">✓</span>
+			<span>SteadyAchievements</span>
+		</div>
+		<div class="top-actions">
+			<select id="bot" aria-label="Bot" hidden></select>
+			<div class="lang" role="group" aria-label="Language">
+				<button type="button" data-lang="tr">TR</button>
+				<button type="button" data-lang="en">EN</button>
+			</div>
+		</div>
+	</header>
+
+	<nav class="tabs" role="tablist">
+		<button type="button" role="tab" data-tab="status" data-i18n="tab.status"></button>
+		<button type="button" role="tab" data-tab="settings" data-i18n="tab.settings"></button>
+		<button type="button" role="tab" data-tab="history" data-i18n="tab.history"></button>
+		<button type="button" role="tab" data-tab="help" data-i18n="tab.help"></button>
+	</nav>
+
+	<main>
+		<!-- Login -->
+		<section id="login" class="card narrow" hidden>
+			<h2 data-i18n="login.title"></h2>
+			<p class="muted" data-i18n="login.text"></p>
+			<form id="login-form">
+				<input id="login-password" type="password" autocomplete="current-password" required>
+				<button type="submit" class="primary" data-i18n="login.button"></button>
+			</form>
+			<p id="login-error" class="error" hidden></p>
+		</section>
+
+		<!-- Status -->
+		<section id="tab-status" class="tab" hidden>
+			<div id="trimmed" class="banner warn" hidden data-i18n="status.trimmed"></div>
+			<div class="summary card">
+				<div class="mode-line">
+					<span id="mode-badge" class="badge"></span>
+					<span id="enabled-badge" class="badge"></span>
+					<span id="window-badge" class="badge"></span>
+					<span id="auto-badge" class="badge"></span>
+				</div>
+				<div class="stats">
+					<div><span class="label" data-i18n="status.today"></span><strong id="today"></strong></div>
+					<div><span class="label" data-i18n="status.hours"></span><strong id="hours"></strong></div>
+					<div><span class="label" data-i18n="status.localTime"></span><strong id="local-time"></strong></div>
+				</div>
+			</div>
+
+			<h3 data-i18n="status.playing"></h3>
+			<div id="playing" class="list"></div>
+
+			<h3 data-i18n="status.games"></h3>
+			<div id="games" class="grid"></div>
+
+			<details id="completed-box">
+				<summary><span data-i18n="status.completed"></span> <span id="completed-count" class="muted"></span></summary>
+				<div id="completed" class="list"></div>
+			</details>
+		</section>
+
+		<!-- Settings -->
+		<section id="tab-settings" class="tab" hidden>
+			<form id="settings-form" novalidate>
+				<fieldset class="card">
+					<legend data-i18n="set.run"></legend>
+					<div class="mode-choice">
+						<label class="choice"><input type="radio" name="mode" value="sim"><span><strong data-i18n="set.sim"></strong><small data-i18n="set.simHelp"></small></span></label>
+						<label class="choice danger"><input type="radio" name="mode" value="real"><span><strong data-i18n="set.real"></strong><small data-i18n="set.realHelp"></small></span></label>
+					</div>
+					<label class="switch"><input type="checkbox" name="Enabled"><span data-i18n="set.enabled"></span></label>
+					<label class="field"><span data-i18n="set.language"></span>
+						<select name="Language"><option value="tr">Türkçe</option><option value="en">English</option></select>
+						<small data-i18n="set.languageHelp"></small>
+					</label>
+				</fieldset>
+
+				<fieldset class="card">
+					<legend data-i18n="set.pace"></legend>
+					<div class="row">
+						<label class="field"><span data-i18n="set.minDays"></span><input type="number" name="MinDays" min="1" max="365"></label>
+						<label class="field"><span data-i18n="set.maxDays"></span><input type="number" name="MaxDays" min="1" max="365"></label>
+					</div>
+					<small class="help" data-i18n="set.daysHelp"></small>
+					<div class="row">
+						<label class="field"><span data-i18n="set.from"></span><input type="time" name="from" required></label>
+						<label class="field"><span data-i18n="set.to"></span><input type="time" name="to" required></label>
+					</div>
+					<small class="help" data-i18n="set.hoursHelp"></small>
+					<label class="field"><span data-i18n="set.timeZone"></span><input type="text" name="TimeZone" placeholder="Europe/Istanbul" autocomplete="off">
+						<small data-i18n="set.timeZoneHelp"></small>
+					</label>
+					<div class="row">
+						<label class="field"><span data-i18n="set.maxActive"></span><input type="number" name="MaxActiveGames" min="1" max="10"></label>
+						<label class="field"><span data-i18n="set.maxPerDay"></span><input type="number" name="MaxPerDay" min="1" max="200"></label>
+						<label class="field"><span data-i18n="set.minGap"></span><input type="number" name="MinGapMinutes" min="5" max="1440"></label>
+					</div>
+					<div class="row">
+						<label class="field"><span data-i18n="set.minPlaytime"></span><input type="number" name="MinPlaytimeHours" min="0" max="1000" step="0.5"></label>
+						<label class="field"><span data-i18n="set.skipRarer"></span><input type="number" name="SkipRarerThan" min="0" max="50" step="0.1"></label>
+					</div>
+					<small class="help" data-i18n="set.paceHelp"></small>
+				</fieldset>
+
+				<fieldset class="card">
+					<legend data-i18n="set.games"></legend>
+					<label class="switch"><input type="checkbox" name="ExcludeVac"><span data-i18n="set.vac"></span></label>
+					<label class="switch"><input type="checkbox" name="ExcludeOnline"><span data-i18n="set.online"></span></label>
+					<label class="switch"><input type="checkbox" name="ProtectDlc"><span data-i18n="set.dlc"></span></label>
+					<label class="switch"><input type="checkbox" name="RespectAsfBlacklist"><span data-i18n="set.asfBlacklist"></span></label>
+					<label class="field"><span data-i18n="set.blacklist"></span><input type="text" name="Blacklist" inputmode="numeric" placeholder="730, 570"><small data-i18n="set.blacklistHelp"></small></label>
+					<label class="field"><span data-i18n="set.allowlist"></span><input type="text" name="Allowlist" inputmode="numeric"><small data-i18n="set.allowlistHelp"></small></label>
+					<label class="field"><span data-i18n="set.developers"></span><input type="text" name="BlockedDevelopers" placeholder="Valve"><small data-i18n="set.namesHelp"></small></label>
+					<label class="field"><span data-i18n="set.publishers"></span><input type="text" name="BlockedPublishers"></label>
+				</fieldset>
+
+				<fieldset class="card">
+					<legend data-i18n="set.auto"></legend>
+					<label class="switch"><input type="checkbox" name="AutoPlay"><span data-i18n="set.autoPlay"></span></label>
+					<small class="help" data-i18n="set.autoHelp"></small>
+					<label class="field"><span data-i18n="set.rotate"></span><input type="number" name="AutoPlayRotateHours" min="1" max="48"></label>
+				</fieldset>
+
+				<fieldset class="card">
+					<legend>Discord</legend>
+					<label class="field"><span data-i18n="set.webhook"></span><input type="url" name="DiscordWebhook" placeholder="https://discord.com/api/webhooks/..." autocomplete="off"></label>
+					<label class="switch"><input type="checkbox" name="NotifyCompleted"><span data-i18n="set.nCompleted"></span></label>
+					<label class="switch"><input type="checkbox" name="NotifyEachUnlock"><span data-i18n="set.nEach"></span></label>
+					<label class="switch"><input type="checkbox" name="NotifyDailySummary"><span data-i18n="set.nSummary"></span></label>
+					<label class="field"><span data-i18n="set.summaryHour"></span><input type="number" name="DailySummaryHour" min="0" max="23"></label>
+					<label class="switch"><input type="checkbox" name="NotifyProblems"><span data-i18n="set.nProblems"></span></label>
+					<button type="button" id="test-discord" data-i18n="set.test"></button>
+				</fieldset>
+
+				<div class="save-bar">
+					<span id="save-msg" class="muted"></span>
+					<button type="submit" class="primary" data-i18n="set.save"></button>
+				</div>
+			</form>
+		</section>
+
+		<!-- History -->
+		<section id="tab-history" class="tab" hidden>
+			<div id="history" class="list"></div>
+		</section>
+
+		<!-- Help -->
+		<section id="tab-help" class="tab card prose" hidden></section>
+	</main>
+
+	<dialog id="detail">
+		<div class="dialog-head">
+			<h2 id="detail-title"></h2>
+			<button type="button" class="icon" id="detail-close" aria-label="Close">✕</button>
+		</div>
+		<div id="detail-tools" class="detail-tools"></div>
+		<div id="detail-body" class="ach-list"></div>
+	</dialog>
+
+	<dialog id="confirm-real">
+		<h2 data-i18n="real.title"></h2>
+		<p data-i18n="real.text"></p>
+		<div class="dialog-actions">
+			<button type="button" value="cancel" data-i18n="real.cancel"></button>
+			<button type="button" value="ok" class="danger-btn" data-i18n="real.ok"></button>
+		</div>
+	</dialog>
+
+	<script src="i18n.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>
