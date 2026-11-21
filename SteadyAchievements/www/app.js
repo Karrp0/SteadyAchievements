@@ -71,8 +71,30 @@
 		return state.lang === "tr" ? `%${number.replace(".", ",")}` : `${number}%`;
 	}
 
-	function headerImage(appId) {
-		return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/capsule_231x87.jpg`;
+	// Steam image with fallbacks: each failing URL tries the next one, and at the end a neutral placeholder
+	// takes its place (some newer games and achievements simply have no image at the old addresses).
+	function steamImage(className, urls, label = "") {
+		const sources = urls.filter(Boolean);
+		const placeholder = () => h("span", { class: `${className} placeholder`, "aria-hidden": "true" }, (label || "").trim().slice(0, 1).toUpperCase());
+		if (!sources.length) return placeholder();
+		let index = 0;
+		const img = h("img", { class: className, src: sources[0], alt: "", loading: "lazy" });
+		img.addEventListener("error", () => {
+			index++;
+			if (index < sources.length) img.src = sources[index];
+			else img.replaceWith(placeholder());
+		});
+		return img;
+	}
+
+	const LEGACY_CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps";
+
+	function capsule(appId, url, name) {
+		return steamImage("thumb", [url, `${LEGACY_CDN}/${appId}/capsule_231x87.jpg`], name);
+	}
+
+	function cover(appId, url, name) {
+		return steamImage("cover", [url, `${LEGACY_CDN}/${appId}/header.jpg`], name);
 	}
 
 	function toast(el, text, isError = false) {
@@ -190,10 +212,14 @@
 			playing.append(h("p", { class: "empty" }, t("status.noPlaying")));
 		}
 		for (const p of s.Playing) {
-			playing.append(h("div", { class: `row-item ${p.Eligible ? "" : "dim"}` },
-				h("img", { class: "thumb", src: headerImage(p.AppId), alt: "", loading: "lazy", onerror: e => { e.target.style.visibility = "hidden"; } }),
+			const [chipClass, chipText] = !p.Eligible ? ["off", p.Status]
+				: p.Finished ? ["", t("play.finished")]
+				: p.InSlot ? ["ok", t("play.slot")]
+				: ["", t("play.waiting")];
+			playing.append(h("div", { class: `row-item ${p.Eligible && !p.Finished ? "" : "dim"}` },
+				capsule(p.AppId, p.Capsule, p.Name),
 				h("div", { class: "grow" }, h("strong", {}, p.Name), h("div", { class: "muted small" }, `AppID ${p.AppId}`)),
-				h("span", { class: `chip ${p.Eligible ? (p.InSlot ? "ok" : "") : "off"}` }, p.Eligible ? (p.InSlot ? t("play.slot") : t("play.waiting")) : p.Status)
+				h("span", { class: `chip ${chipClass}` }, chipText)
 			));
 		}
 
@@ -211,7 +237,7 @@
 		for (const g of s.Completed) {
 			const progressed = g.Done + g.Simulated;
 			completed.append(h("div", { class: "row-item" },
-				h("img", { class: "thumb", src: headerImage(g.AppId), alt: "", loading: "lazy", onerror: e => { e.target.style.visibility = "hidden"; } }),
+				capsule(g.AppId, g.Capsule, g.Name),
 				h("div", { class: "grow" },
 					h("strong", {}, g.Name),
 					h("div", { class: "muted small" }, g.Planned === 0
@@ -234,7 +260,7 @@
 		if (g.SkippedRare) meta.push(`${g.SkippedRare} ${t("game.rare")}`);
 
 		return h("article", { class: `game card ${g.InSlot ? "" : "paused"}` },
-			h("img", { class: "cover", src: `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.AppId}/header.jpg`, alt: "", loading: "lazy", onerror: e => { e.target.remove(); } }),
+			cover(g.AppId, g.Header, g.Name),
 			h("div", { class: "game-body" },
 				h("div", { class: "game-title" }, h("strong", {}, g.Name), !g.InSlot ? h("span", { class: "chip off" }, t("game.paused")) : null),
 				h("div", { class: "progress", title: `${progressed}/${g.Planned}` }, h("span", { style: `width:${pct}%` })),
@@ -285,7 +311,7 @@
 		tools.replaceChildren(...Object.entries(counts).map(([key, n]) => h("span", { class: `chip st-${key}` }, `${t(`ach.${key}`)}: ${n}`)));
 
 		body.replaceChildren(...detail.Achievements.map(a => h("div", { class: `ach st-${a.State}` },
-			a.Icon ? h("img", { src: a.Icon, alt: "", loading: "lazy" }) : h("span", { class: "noicon" }),
+			steamImage("icon", [a.Icon], "?"),
 			h("div", { class: "grow" },
 				h("div", {}, h("strong", {}, a.Name), a.Hidden ? h("span", { class: "muted small" }, ` · ${t("ach.hidden")}`) : null),
 				a.Description ? h("div", { class: "muted small" }, a.Description) : null,

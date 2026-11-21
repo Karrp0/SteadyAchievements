@@ -169,7 +169,17 @@ internal sealed class BotWorker : IDisposable {
 			TickOutput output = Engine.Tick(State, Settings, input);
 			StateDirty |= output.Slots.Count > 0;
 
-			PlayingSnapshot = snapshot.Select(p => new PlayingDto { AppId = p.AppId, Name = p.Name, Eligible = p.Eligible, Status = p.Status, InSlot = output.Slots.Contains(p.AppId) }).ToList();
+			PlayingSnapshot = snapshot.Select(
+				p => new PlayingDto {
+					AppId = p.AppId,
+					Name = p.Name,
+					Eligible = p.Eligible,
+					Status = p.Status,
+					InSlot = output.Slots.Contains(p.AppId),
+					Finished = p.Eligible && State.Plans.TryGetValue(p.AppId, out GamePlan? plan) && plan.IsCompleted,
+					Capsule = CapsuleUrl(p.AppId)
+				}
+			).ToList();
 
 			foreach (uint appId in output.NeedPlan) {
 				await CreatePlan(appId, window, now).ConfigureAwait(false);
@@ -644,6 +654,10 @@ internal sealed class BotWorker : IDisposable {
 		StateDirty = false;
 	}
 
+	private static string CapsuleUrl(uint appId) => AppFacts.ImageUrl(appId, AppInfo.Peek(appId)?.CapsuleImage ?? "", "capsule_231x87.jpg");
+
+	private static string HeaderUrl(uint appId) => AppFacts.ImageUrl(appId, AppInfo.Peek(appId)?.HeaderImage ?? "", "header.jpg");
+
 	private string NameOf(uint appId) {
 		if (State.Plans.TryGetValue(appId, out GamePlan? plan) && (plan.Name.Length > 0)) {
 			return plan.Name;
@@ -762,7 +776,9 @@ internal sealed class BotWorker : IDisposable {
 				CreatedUtc = plan.CreatedUtc,
 				CompletedUtc = plan.CompletedUtc,
 				Playing = playing.Contains(plan.AppId),
-				InSlot = slots.Contains(plan.AppId)
+				InSlot = slots.Contains(plan.AppId),
+				Header = HeaderUrl(plan.AppId),
+				Capsule = CapsuleUrl(plan.AppId)
 			};
 		}
 

@@ -161,7 +161,18 @@ internal static class AppInfo {
 			"DLC" => "dlc",
 			"" => "unknown",
 			string other => other.ToLowerInvariant()
-		}, [.. categories], [.. dlcs.Distinct()], [.. developers], [.. publishers], fetchedUtc);
+		}, [.. categories], [.. dlcs.Distinct()], [.. developers], [.. publishers], fetchedUtc) {
+			HeaderImage = ImageFile(common["header_image"]),
+			CapsuleImage = ImageFile(common["small_capsule"])
+		};
+	}
+
+	// "header_image" { "english" "<file>" ... }: prefer English, else the first language given
+	private static string ImageFile(KeyValue node) {
+		string? file = node["english"].Value ?? node.Value ?? node.Children.Select(static child => child.Value).FirstOrDefault(static value => !string.IsNullOrEmpty(value));
+
+		// Only a relative file path is expected; anything else is ignored
+		return string.IsNullOrWhiteSpace(file) || file.Contains("..", StringComparison.Ordinal) || file.Contains(':', StringComparison.Ordinal) ? "" : file.Trim().TrimStart('/');
 	}
 
 	private static void AddIfMissing(List<string> list, string? name) {
@@ -175,7 +186,13 @@ internal static class AppInfo {
 		List<FactsDto>? stored = await JsonStore.Load<List<FactsDto>>(FileName).ConfigureAwait(false);
 
 		foreach (FactsDto dto in stored ?? []) {
-			Cache[dto.AppId] = new AppFacts(dto.AppId, dto.Name, dto.Type, [.. dto.Categories], [.. dto.Dlcs], [.. dto.Developers], [.. dto.Publishers], dto.FetchedUtc);
+			// Entries saved before image names were stored: refresh them on next use
+			DateTime fetched = (dto.Type == "game") && (dto.HeaderImage.Length == 0) ? DateTime.MinValue : dto.FetchedUtc;
+
+			Cache[dto.AppId] = new AppFacts(dto.AppId, dto.Name, dto.Type, [.. dto.Categories], [.. dto.Dlcs], [.. dto.Developers], [.. dto.Publishers], fetched) {
+				HeaderImage = dto.HeaderImage,
+				CapsuleImage = dto.CapsuleImage
+			};
 		}
 	}
 
@@ -188,7 +205,9 @@ internal static class AppInfo {
 			Dlcs = [.. f.Dlcs],
 			Developers = [.. f.Developers],
 			Publishers = [.. f.Publishers],
-			FetchedUtc = f.FetchedUtc
+			FetchedUtc = f.FetchedUtc,
+			HeaderImage = f.HeaderImage,
+			CapsuleImage = f.CapsuleImage
 		}).ToList();
 
 		await JsonStore.Save(FileName, dtos).ConfigureAwait(false);
@@ -204,5 +223,7 @@ internal static class AppInfo {
 		public List<string> Developers { get; set; } = [];
 		public List<string> Publishers { get; set; } = [];
 		public DateTime FetchedUtc { get; set; }
+		public string HeaderImage { get; set; } = "";
+		public string CapsuleImage { get; set; } = "";
 	}
 }

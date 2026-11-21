@@ -86,6 +86,12 @@ public sealed class AppInfoTests {
 		category.Children.Add(new KeyValue("category_8", "1"));
 		category.Children.Add(new KeyValue("category_1", "0"));
 		common.Children.Add(category);
+		KeyValue header = new("header_image");
+		header.Children.Add(new KeyValue("english", "abc123/header_alt.jpg"));
+		common.Children.Add(header);
+		KeyValue small = new("small_capsule");
+		small.Children.Add(new KeyValue("german", "../evil.jpg"));
+		common.Children.Add(small);
 		KeyValue associations = new("associations");
 		KeyValue dev = new("0");
 		dev.Children.Add(new KeyValue("type", "developer"));
@@ -106,6 +112,9 @@ public sealed class AppInfoTests {
 		CollectionAssert.AreEqual(new uint[] { 11, 12 }, facts.Dlcs.ToArray());
 		CollectionAssert.AreEqual(new[] { "Studio" }, facts.Developers.ToArray());
 		CollectionAssert.AreEqual(new[] { "Pub" }, facts.Publishers.ToArray());
+		Assert.AreEqual("abc123/header_alt.jpg", facts.HeaderImage);
+		Assert.AreEqual("", facts.CapsuleImage, "path traversal is ignored");
+		Assert.AreEqual("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/5/abc123/header_alt.jpg", AppFacts.ImageUrl(5, facts.HeaderImage, "header.jpg"));
 	}
 }
 

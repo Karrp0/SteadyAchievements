@@ -31,7 +31,16 @@ internal sealed record AppFacts(
 	ImmutableArray<string> Publishers,
 	DateTime FetchedUtc
 ) {
+	// Store image file names from app info, relative to the app's store asset folder
+	// (old apps: "header.jpg"; newer apps: "<hash>/header_....jpg"). Empty when unknown.
+	internal string HeaderImage { get; init; } = "";
+	internal string CapsuleImage { get; init; } = "";
+
 	internal bool HasCategory(int category) => Categories.Contains(category);
+
+	internal const string StoreAssets = "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/";
+
+	internal static string ImageUrl(uint appId, string file, string fallback) => $"{StoreAssets}{appId}/{(file.Length > 0 ? file : fallback)}";
 }
 
 internal enum StepState : byte {

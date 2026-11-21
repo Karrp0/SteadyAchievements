@@ -246,7 +246,18 @@ dialog::backdrop { background: rgb(0 0 0 / 0.5); }
 .ach-list { display: grid; gap: 6px; }
 
 .ach { display: flex; gap: 12px; align-items: flex-start; padding: 8px; border-radius: 10px; background: var(--surface-2); }
-.ach img, .ach .noicon { width: 48px; height: 48px; border-radius: 6px; flex: none; background: var(--border); }
+.ach .icon { width: 48px; height: 48px; border-radius: 6px; flex: none; background: var(--border); }
+
+/* Shown when Steam has no image for a game or achievement */
+.placeholder {
+	display: grid;
+	place-items: center;
+	color: var(--muted);
+	font-weight: 700;
+	background: linear-gradient(135deg, var(--surface-2), var(--border));
+}
+
+.cover.placeholder { font-size: 48px; }
 .ach .state { font-weight: 600; }
 .ach.st-done .state, .ach.st-unlocked .state { color: var(--accent); }
 .ach.st-simulated .state { color: #64748b; }

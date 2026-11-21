@@ -47,6 +47,8 @@ public sealed class GameDto {
 	public DateTime? CompletedUtc { get; init; }
 	public bool Playing { get; init; }
 	public bool InSlot { get; init; }
+	public string Header { get; init; } = "";
+	public string Capsule { get; init; } = "";
 }
 
 public sealed class PlayingDto {
@@ -54,7 +56,12 @@ public sealed class PlayingDto {
 	public string Name { get; init; } = "";
 	public bool Eligible { get; init; }
 	public bool InSlot { get; init; }
+
+	// Eligible, but its plan has nothing left to unlock
+	public bool Finished { get; init; }
+
 	public string Status { get; init; } = "";
+	public string Capsule { get; init; } = "";
 }
 
 public sealed class HistoryDto {
