@@ -31,7 +31,15 @@ internal sealed class SteadyAchievementsPlugin : IBot, IBotConnection, IBotSteam
 		ASF.ArchiLogger.LogGenericInfo($"{Name} {Version} loaded. Panel: /steady/");
 
 		if (TrimmedRuntime) {
-			ASF.ArchiLogger.LogGenericWarning($"[{Name}] This ASF build is trimmed; the 'generic' ASF build is recommended for plugins (time zones and less-used .NET APIs may be missing).");
+			ASF.ArchiLogger.LogGenericInfo($"[{Name}] Trimmed ASF build detected; the TimeZone setting is not available here, the server time is used.");
+		}
+
+		if (SelfTest.Enabled) {
+			try {
+				_ = SelfTest.Run();
+			} catch (Exception e) {
+				ASF.ArchiLogger.LogGenericWarning($"[Steady self-test] could not run: {e.GetType().Name}: {e.Message}");
+			}
 		}
 
 		return Task.CompletedTask;

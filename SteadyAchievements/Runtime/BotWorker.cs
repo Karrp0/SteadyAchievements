@@ -656,6 +656,18 @@ internal sealed class BotWorker : IDisposable {
 		StateDirty = false;
 	}
 
+	// Newest first
+	private List<HistoryDto> RecentHistory(int count) {
+		List<HistoryDto> result = new(Math.Min(count, State.History.Count));
+
+		for (int i = State.History.Count - 1; (i >= 0) && (result.Count < count); i--) {
+			HistoryEntry h = State.History[i];
+			result.Add(new HistoryDto { Utc = h.Utc, Kind = h.Kind.ToString(), AppId = h.AppId, Game = h.Game, Achievement = h.Achievement, Percent = h.Percent });
+		}
+
+		return result;
+	}
+
 	private static string CapsuleUrl(uint appId) => AppFacts.ImageUrl(appId, AppInfo.Peek(appId)?.CapsuleImage ?? "", "capsule_231x87.jpg");
 
 	private static string HeaderUrl(uint appId) => AppFacts.ImageUrl(appId, AppInfo.Peek(appId)?.HeaderImage ?? "", "header.jpg");
@@ -781,7 +793,7 @@ internal sealed class BotWorker : IDisposable {
 
 		GameDto ToDto(GamePlan plan) {
 			PlanStep? next = plan.NextPending();
-			long last = plan.Steps.Count > 0 ? plan.Steps.Max(static s => s.DueMinute) : 0;
+			long last = plan.LastDue();
 			long? nextIn = next != null ? Math.Max(0, next.DueMinute - plan.ActiveMinutes) : null;
 
 			return new GameDto {
@@ -829,7 +841,7 @@ internal sealed class BotWorker : IDisposable {
 			Games = State.Plans.Values.Where(static p => !p.IsCompleted).OrderByDescending(p => slots.Contains(p.AppId)).ThenBy(static p => p.CreatedUtc).Select(ToDto).ToList(),
 			Completed = State.Plans.Values.Where(static p => p.IsCompleted).OrderByDescending(static p => p.CompletedUtc).Select(ToDto).ToList(),
 			Playing = [.. PlayingSnapshot],
-			History = State.History.AsEnumerable().Reverse().Take(100).Select(static h => new HistoryDto { Utc = h.Utc, Kind = h.Kind.ToString(), AppId = h.AppId, Game = h.Game, Achievement = h.Achievement, Percent = h.Percent }).ToList()
+			History = RecentHistory(100)
 		};
 	}
 

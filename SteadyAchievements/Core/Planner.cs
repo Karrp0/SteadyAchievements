@@ -99,7 +99,7 @@ internal static class Planner {
 
 		// Roughly MinDays' worth of time per "full game", proportional to how many were added
 		double perAchievement = Math.Max((double) settings.MinDays * windowMinutesPerDay / Math.Max(plan.Steps.Count + added.Count, 1), settings.MinGapMinutes);
-		long start = Math.Max(plan.ActiveMinutes, plan.Steps.Count > 0 ? plan.Steps.Max(static s => s.DueMinute) : 0);
+		long start = Math.Max(plan.ActiveMinutes, plan.LastDue());
 
 		plan.Steps.AddRange(Schedule(added, perAchievement * added.Count, settings.MinGapMinutes, random, start));
 		plan.TotalAchievements += added.Count;
@@ -108,7 +108,7 @@ internal static class Planner {
 		return added.Count;
 	}
 
-	internal static double PercentOf(string apiName, IReadOnlyDictionary<string, double> percents) => Math.Clamp(percents.TryGetValue(apiName, out double p) && double.IsFinite(p) ? p : UnknownPercent, MinPercent, 100);
+	internal static double PercentOf(string apiName, IReadOnlyDictionary<string, double> percents) => Math.Min(Math.Max(percents.TryGetValue(apiName, out double p) && double.IsFinite(p) ? p : UnknownPercent, MinPercent), 100);
 
 	private static List<PlanStep> Schedule(List<(AchievementDef Def, double Percent)> items, double budget, int minGap, Random random, long startMinute) {
 		// Order: larger key first; key = Sharpness * ln(p) + Gumbel noise
@@ -118,7 +118,13 @@ internal static class Planner {
 		ordered = Chains.Repair(ordered, static item => item.Def);
 
 		double[] gaps = ordered.Select(item => (1 + Math.Log(100 / item.Percent)) * Math.Exp(GapNoise * Normal(random))).ToArray();
-		double scale = budget / gaps.Sum();
+		double total = 0;
+
+		foreach (double gap in gaps) {
+			total += gap;
+		}
+
+		double scale = budget / total;
 		List<PlanStep> steps = new(ordered.Count);
 		double due = startMinute;
 

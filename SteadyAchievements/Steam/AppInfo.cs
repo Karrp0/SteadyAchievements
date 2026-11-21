@@ -47,7 +47,11 @@ internal static class AppInfo {
 			List<uint> missing = wanted.Where(id => (!Cache.TryGetValue(id, out AppFacts? facts) || (now - facts.FetchedUtc > MaxAge)) && (!FailedUntil.TryGetValue(id, out DateTime until) || (until < now))).ToList();
 
 			for (int i = 0; i < missing.Count; i += BatchSize) {
-				List<uint> batch = missing.GetRange(i, Math.Min(BatchSize, missing.Count - i));
+				List<uint> batch = [];
+
+				for (int j = i; (j < missing.Count) && (j < i + BatchSize); j++) {
+					batch.Add(missing[j]);
+				}
 
 				if (!await FetchBatch(bot, batch).ConfigureAwait(false)) {
 					foreach (uint id in batch) {
@@ -201,7 +205,7 @@ internal static class AppInfo {
 			AppId = f.AppId,
 			Name = f.Name,
 			Type = f.Type,
-			Categories = [.. f.Categories.Order()],
+			Categories = [.. f.Categories.OrderBy(static c => c)],
 			Dlcs = [.. f.Dlcs],
 			Developers = [.. f.Developers],
 			Publishers = [.. f.Publishers],

@@ -40,12 +40,12 @@ internal static class GlobalPercents {
 	internal static Dictionary<string, double> Parse(JsonElement root) {
 		Dictionary<string, double> result = new(StringComparer.Ordinal);
 
-		if ((root.ValueKind != JsonValueKind.Object) || !root.TryGetProperty("achievementpercentages", out JsonElement wrapper) || !wrapper.TryGetProperty("achievements", out JsonElement list) || (list.ValueKind != JsonValueKind.Array)) {
+		if ((Property(root, "achievementpercentages") is not { } wrapper) || (Property(wrapper, "achievements") is not { ValueKind: JsonValueKind.Array } list)) {
 			return result;
 		}
 
 		foreach (JsonElement item in list.EnumerateArray()) {
-			if (!item.TryGetProperty("name", out JsonElement name) || (name.GetString() is not { Length: > 0 } apiName) || !item.TryGetProperty("percent", out JsonElement percent)) {
+			if ((Property(item, "name") is not { ValueKind: JsonValueKind.String } name) || (name.GetString() is not { Length: > 0 } apiName) || (Property(item, "percent") is not { } percent)) {
 				continue;
 			}
 
@@ -62,5 +62,20 @@ internal static class GlobalPercents {
 		}
 
 		return result;
+	}
+
+	// JsonElement.TryGetProperty is not available in ASF's trimmed builds; walking the object is
+	private static JsonElement? Property(JsonElement element, string name) {
+		if (element.ValueKind != JsonValueKind.Object) {
+			return null;
+		}
+
+		foreach (JsonProperty property in element.EnumerateObject()) {
+			if (string.Equals(property.Name, name, StringComparison.Ordinal)) {
+				return property.Value;
+			}
+		}
+
+		return null;
 	}
 }

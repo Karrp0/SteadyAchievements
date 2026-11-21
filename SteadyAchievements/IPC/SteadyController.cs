@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -15,7 +16,7 @@ namespace SteadyAchievements.IPC;
 public sealed class SteadyController : ArchiController {
 	[HttpGet("Bots")]
 	[ProducesResponseType<GenericResponse<IReadOnlyList<string>>>((int) HttpStatusCode.OK)]
-	public ActionResult<GenericResponse> Bots() => Ok(new GenericResponse<IReadOnlyList<string>>(SteadyAchievementsPlugin.WorkerNames.Order().ToList()));
+	public ActionResult<GenericResponse> Bots() => Ok(new GenericResponse<IReadOnlyList<string>>(SteadyAchievementsPlugin.WorkerNames.OrderBy(static name => name, StringComparer.Ordinal).ToList()));
 
 	[HttpGet("{botName:required}")]
 	[ProducesResponseType<GenericResponse<StatusDto>>((int) HttpStatusCode.OK)]
@@ -106,5 +107,5 @@ public sealed class SteadyController : ArchiController {
 		return worker == null ? NotFoundBot(botName) : Ok(new GenericResponse(await worker.SendTestNotice().ConfigureAwait(false)));
 	}
 
-	private NotFoundObjectResult NotFoundBot(string botName) => NotFound(new GenericResponse(false, $"Bot not found: {botName}"));
+	private ObjectResult NotFoundBot(string botName) => StatusCode((int) HttpStatusCode.NotFound, new GenericResponse(false, $"Bot not found: {botName}"));
 }

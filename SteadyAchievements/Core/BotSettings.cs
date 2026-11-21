@@ -66,8 +66,8 @@ public sealed class BotSettings {
 		DiscordWebhook = (DiscordWebhook ?? "").Trim();
 		BlockedDevelopers = CleanNames(BlockedDevelopers);
 		BlockedPublishers = CleanNames(BlockedPublishers);
-		Blacklist = (Blacklist ?? []).Where(static id => id != 0).Distinct().Order().ToList();
-		Allowlist = (Allowlist ?? []).Where(static id => id != 0).Distinct().Order().ToList();
+		Blacklist = (Blacklist ?? []).Where(static id => id != 0).Distinct().OrderBy(static id => id).ToList();
+		Allowlist = (Allowlist ?? []).Where(static id => id != 0).Distinct().OrderBy(static id => id).ToList();
 	}
 
 	internal List<string> Validate(Func<string?, bool> isValidTimeZone) {

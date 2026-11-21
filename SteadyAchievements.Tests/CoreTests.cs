@@ -432,3 +432,22 @@ public sealed class TextsTests {
 	[TestMethod]
 	public void FallsBackToTurkish() => Assert.AreEqual(Texts.Get("tr", "word.on"), Texts.Get("de", "word.on"));
 }
+
+[TestClass]
+public sealed class SelfTestTests {
+	[TestMethod]
+	public void AllStepsPassOnTheFullRuntime() => Assert.AreEqual(0, SteadyAchievements.Runtime.SelfTest.Run());
+}
+
+[TestClass]
+public sealed class ClockTests {
+	[TestMethod]
+	public void ZonesWorkOnTheFullRuntime() {
+		Assert.IsTrue(Clock.IsValidTimeZone("Europe/Istanbul"));
+		Assert.IsFalse(Clock.IsValidTimeZone("No/Such_Zone"));
+		Assert.IsTrue(Clock.IsValidTimeZone("Europe/Istanbul"), "an unknown id must not switch zones off");
+
+		DateTime utc = new(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+		Assert.AreEqual(15, Clock.ToLocal(utc, "Europe/Istanbul").Hour);
+	}
+}

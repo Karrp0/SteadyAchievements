@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Web.Responses;
 using SteadyAchievements.Core;
+using SteadyAchievements.Storage;
 
 namespace SteadyAchievements.Runtime;
 
@@ -26,6 +27,23 @@ internal static class Discord {
 		if (string.IsNullOrEmpty(webhook) || !BotSettings.IsDiscordWebhook(webhook) || (ASF.WebBrowser == null)) {
 			return false;
 		}
+
+		string payload = BuildPayload(botName, kind, description, language, simulation);
+
+		try {
+			using StringContent content = new(payload, Encoding.UTF8, "application/json");
+			BasicResponse? response = await ASF.WebBrowser.UrlPost(new Uri(webhook), data: content, maxTries: 2).ConfigureAwait(false);
+
+			return response != null;
+		} catch (Exception e) when (e is HttpRequestException or TaskCanceledException or UriFormatException) {
+			ASF.ArchiLogger.LogGenericWarning($"[{nameof(SteadyAchievements)}] Discord: {e.Message}");
+
+			return false;
+		}
+	}
+
+	internal static string BuildPayload(string botName, NoticeKind kind, string description, string language, bool simulation) {
+		ArgumentNullException.ThrowIfNull(description);
 
 		(string titleKey, int color) = kind switch {
 			NoticeKind.Unlock => ("dc.title.unlock", 0x2ECC71),
@@ -50,15 +68,6 @@ internal static class Discord {
 			["allowed_mentions"] = new Dictionary<string, object> { ["parse"] = Array.Empty<string>() }
 		};
 
-		try {
-			using StringContent content = new(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-			BasicResponse? response = await ASF.WebBrowser.UrlPost(new Uri(webhook), data: content, maxTries: 2).ConfigureAwait(false);
-
-			return response != null;
-		} catch (Exception e) when (e is HttpRequestException or TaskCanceledException or UriFormatException) {
-			ASF.ArchiLogger.LogGenericWarning($"[{nameof(SteadyAchievements)}] Discord: {e.Message}");
-
-			return false;
-		}
+		return JsonSerializer.Serialize(payload, JsonStore.Compact);
 	}
 }

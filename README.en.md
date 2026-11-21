@@ -32,7 +32,7 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
 ## Requirements
 
 - ASF **6.3.x** (tested with 6.3.11.7).
-- The **generic** ASF build is recommended. The OS-specific builds (`linux-x64`, `win-x64`…) are trimmed: the .NET parts ASF itself doesn't use are removed, and there is no time zone database. The plugin still loads on them and shows a warning in the panel.
+- Works on **every ASF build**: `generic`, `linux-x64`, `win-x64` and the others. The OS-specific builds are trimmed: the .NET parts ASF itself does not use are removed. The plugin is tested against them (see [tools/TrimCheck](tools/TrimCheck)). The only difference is that trimmed builds have no time zone database, so the `TimeZone` setting is unavailable and the server time is used.
 
 ## Installation
 
@@ -58,7 +58,7 @@ Settings are kept per bot in `config/SteadyAchievements/<bot>.settings.json`. Ch
 | `Language` | `tr` | Language for Discord, command replies and log lines (`tr` / `en`). |
 | `MinDays` / `MaxDays` | `30` / `50` | Range of days a game's achievements are spread over. |
 | `ActiveHours` | `10:00-01:00` | Hours in which achievements may unlock. The window may cross midnight; equal start and end means all day. |
-| `TimeZone` | server time | IANA id, e.g. `Europe/Istanbul`. Works on the generic build only. |
+| `TimeZone` | server time | IANA id, e.g. `Europe/Istanbul`. Generic build only; trimmed builds use the server time. |
 | `MaxActiveGames` | `2` | How many games progress at the same time. |
 | `MinGapMinutes` | `20` | Shortest gap between two achievements, in minutes, across the whole bot. |
 | `MaxPerDay` | `8` | Maximum achievements per day. |

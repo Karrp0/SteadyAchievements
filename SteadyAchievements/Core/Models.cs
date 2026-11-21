@@ -84,6 +84,16 @@ internal sealed class GamePlan {
 
 	internal bool IsCompleted => CompletedUtc != null;
 
+	internal long LastDue() {
+		long last = 0;
+
+		foreach (PlanStep step in Steps) {
+			last = Math.Max(last, step.DueMinute);
+		}
+
+		return last;
+	}
+
 	internal PlanStep? NextPending() {
 		PlanStep? next = null;
 

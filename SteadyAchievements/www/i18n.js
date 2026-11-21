@@ -54,7 +54,7 @@ window.I18N = {
 		"login.wrong": "Şifre yanlış.",
 		"login.banned": "Çok fazla yanlış deneme; bir süre bekle.",
 
-		"status.trimmed": "ASF'nin kırpılmış (trimmed) sürümü çalışıyor. Eklentiler için 'generic' sürüm önerilir; saat dilimi ayarı bu sürümde çalışmayabilir.",
+		"status.trimmed": "ASF'nin kırpılmış (trimmed) sürümü çalışıyor. Eklenti bu sürümde de çalışır; sadece saat dilimi ayarı kullanılamaz, sunucunun saati geçerlidir.",
 		"status.summary": "Özet",
 		"status.mode": "Mod",
 		"status.plugin": "Eklenti",
@@ -237,7 +237,7 @@ window.I18N = {
 		"login.wrong": "Wrong password.",
 		"login.banned": "Too many wrong attempts; wait a while.",
 
-		"status.trimmed": "A trimmed ASF build is running. The 'generic' build is recommended for plugins; the time zone setting may not work here.",
+		"status.trimmed": "A trimmed ASF build is running. The plugin works on it; only the time zone setting is unavailable, the server time is used.",
 		"status.summary": "Summary",
 		"status.mode": "Mode",
 		"status.plugin": "Plugin",

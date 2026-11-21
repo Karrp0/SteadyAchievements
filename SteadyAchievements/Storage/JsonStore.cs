@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using ArchiSteamFarm;
 using ArchiSteamFarm.Core;
@@ -12,11 +13,17 @@ namespace SteadyAchievements.Storage;
 internal static class JsonStore {
 	internal static readonly string Directory = Path.Combine(SharedInfo.ConfigDirectory, nameof(SteadyAchievements));
 
+	// The resolver is set explicitly: trimmed .NET apps (ASF's OS-specific builds) turn reflection-based
+	// System.Text.Json off by default, and ASF itself opts back in the same way.
 	internal static readonly JsonSerializerOptions Options = new() {
 		WriteIndented = true,
 		PropertyNameCaseInsensitive = true,
-		NumberHandling = JsonNumberHandling.AllowReadingFromString,
-		Converters = { new JsonStringEnumConverter() }
+		Converters = { new StepStateConverter(), new HistoryKindConverter() },
+		TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+	};
+
+	internal static readonly JsonSerializerOptions Compact = new() {
+		TypeInfoResolver = new DefaultJsonTypeInfoResolver()
 	};
 
 	internal static async Task<T?> Load<T>(string fileName) where T : class {

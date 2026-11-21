@@ -26,7 +26,7 @@
 ## Gereksinimler
 
 - ASF **6.3.x** (6.3.11.7 ile test edildi).
-- ASF'nin **generic** sürümü önerilir. İşletim sistemine özel sürümler (`linux-x64`, `win-x64`…) "kırpılmıştır" (trimmed): .NET'in ASF'nin kullanmadığı parçaları çıkarılmıştır, saat dilimi veritabanı da yoktur. Eklenti bu sürümlerde de yüklenir ve panelde bir uyarı gösterir.
+- ASF'nin **bütün sürümlerinde** çalışır: `generic`, `linux-x64`, `win-x64` vb. İşletim sistemine özel sürümler "kırpılmıştır" (trimmed), yani .NET'in ASF'nin kullanmadığı parçaları çıkarılmıştır. Eklenti bu sürümlere karşı test edilir (bkz. [tools/TrimCheck](tools/TrimCheck)). Tek fark şu: kırpılmış sürümlerde saat dilimi veritabanı yoktur, bu yüzden `TimeZone` ayarı kullanılamaz ve sunucunun saati geçerli olur.
 
 ## Kurulum
 
@@ -52,7 +52,7 @@ Ayarlar her bot için ayrı tutulur: `config/SteadyAchievements/<bot>.settings.j
 | `Language` | `tr` | Discord, komut yanıtları ve kayıt dili (`tr` / `en`). |
 | `MinDays` / `MaxDays` | `30` / `50` | Bir oyunun başarımlarının yayılacağı gün aralığı. |
 | `ActiveHours` | `10:00-01:00` | Başarımların açılabileceği saatler. Gece yarısını geçebilir; başlangıç ve bitiş aynıysa bütün gün. |
-| `TimeZone` | sunucu saati | IANA adı, ör. `Europe/Istanbul`. Sadece generic sürümde çalışır. |
+| `TimeZone` | sunucu saati | IANA adı, ör. `Europe/Istanbul`. Sadece generic sürümde; kırpılmış sürümlerde sunucu saati kullanılır. |
 | `MaxActiveGames` | `2` | Aynı anda ilerleyen oyun sayısı. |
 | `MinGapMinutes` | `20` | İki başarım arasındaki en kısa süre (dakika, bot genelinde). |
 | `MaxPerDay` | `8` | Günde en fazla başarım. |
