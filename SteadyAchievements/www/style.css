@@ -169,7 +169,7 @@ a { color: inherit; }
 
 .dropdown__panel--languages {
 	display: grid;
-	grid-template-columns: repeat(3, auto);
+	grid-template-columns: repeat(6, auto);
 	gap: .25em;
 	min-width: 0;
 	padding: .75em;
@@ -500,4 +500,5 @@ p.form-item__description { margin: -.5em 0 1em; }
 	.save-bar { margin: 0 -.75em -.75em; }
 	.facts th { width: 8em; }
 	.footer { flex-wrap: wrap; gap: .75em 1.25em; }
+	.dropdown__panel--languages { grid-template-columns: repeat(5, auto); right: -3.25rem; }
 }

@@ -50,6 +50,48 @@ window.ICONS = {
 		"zh-CN": `<rect width="30" height="20" fill="#de2910"/><g fill="#ffde00">${star(5, 5, 3, 1.15)}${star(10, 2, 1, 0.38)}${star(12, 4, 1, 0.38)}${star(12, 7, 1, 0.38)}${star(10, 9, 1, 0.38)}</g>`
 	};
 
+	// Nordic cross flags
+	const nordic = (bg, cross, outline) => `<rect width="30" height="20" fill="${bg}"/>${outline ? `<rect x="8" width="5.4" height="20" fill="${outline}"/><rect y="7.3" width="30" height="5.4" fill="${outline}"/>` : ""}<rect x="9" width="3.4" height="20" fill="${cross}"/><rect y="8.3" width="30" height="3.4" fill="${cross}"/>`;
+	const stripes = (n, a, b) => Array.from({ length: n }, (_, i) => `<rect y="${(i * 20) / n}" width="30" height="${20 / n + 0.05}" fill="${i % 2 ? b : a}"/>`).join("");
+	const sixPoint = (cx, cy, r, color) => {
+		const tri = rot => [0, 120, 240].map(a => { const rad = ((a + rot) * Math.PI) / 180; return `${(cx + (r * Math.sin(rad))).toFixed(2)},${(cy - (r * Math.cos(rad))).toFixed(2)}`; }).join(" ");
+		return `<polygon points="${tri(0)}" fill="none" stroke="${color}" stroke-width=".8"/><polygon points="${tri(180)}" fill="none" stroke="${color}" stroke-width=".8"/>`;
+	};
+
+	Object.assign(window.FLAGS, {
+		"be-BY": `<rect width="30" height="20" fill="#c8313e"/><rect y="13.3" width="30" height="6.7" fill="#4aa657"/><rect width="4" height="20" fill="#fff"/><path d="M2 1l1.3 2L2 5 .7 3zM2 7l1.3 2L2 11 .7 9zM2 13l1.3 2L2 17 .7 15z" fill="#c8313e"/>`,
+		"bg-BG": bands(["#fff", "#00966e", "#d62612"]),
+		"bs-BA": `<rect width="30" height="20" fill="#002395"/><polygon points="8,0 22,0 22,20" fill="#fecb00"/><g fill="#fff">${[0, 1, 2, 3, 4, 5].map(i => star(6 + (i * 2.4), 1.5 + (i * 3.4), 1, 0.4)).join("")}</g>`,
+		"ca-ES": stripes(9, "#fcdd09", "#da121a"),
+		"cs-CZ": `<rect width="30" height="10" fill="#fff"/><rect y="10" width="30" height="10" fill="#d7141a"/><polygon points="0,0 15,10 0,20" fill="#11457e"/>`,
+		"da-DK": nordic("#c8102e", "#fff"),
+		"el-GR": `${stripes(9, "#0d5eaf", "#fff")}<rect width="11.1" height="11.1" fill="#0d5eaf"/><rect x="4.45" width="2.2" height="11.1" fill="#fff"/><rect y="4.45" width="11.1" height="2.2" fill="#fff"/>`,
+		"fa-IR": `${bands(["#239f40", "#fff", "#da0000"])}<circle cx="15" cy="10" r="1.8" fill="none" stroke="#da0000" stroke-width=".8"/>`,
+		"fi-FI": nordic("#fff", "#002f6c"),
+		"he-IL": `<rect width="30" height="20" fill="#fff"/><rect y="2" width="30" height="2.6" fill="#0038b8"/><rect y="15.4" width="30" height="2.6" fill="#0038b8"/>${sixPoint(15, 10, 3.6, "#0038b8")}`,
+		"hr-HR": `${bands(["#ff0000", "#fff", "#171796"])}<rect x="12.5" y="5" width="5" height="6.5" fill="#fff" stroke="#ff0000" stroke-width=".6"/><path d="M12.5 5h1.7v1.6h-1.7zM15.8 5h1.7v1.6h-1.7zM14.2 6.6h1.6v1.6h-1.6zM12.5 8.2h1.7v1.6h-1.7zM15.8 8.2h1.7v1.6h-1.7zM14.2 9.8h1.6v1.7h-1.6z" fill="#ff0000"/>`,
+		"hu-HU": bands(["#ce2939", "#fff", "#477050"]),
+		"id-ID": bands(["#ce1126", "#fff"]),
+		"it-IT": bands(["#009246", "#fff", "#ce2b37"], true),
+		"ja-JP": `<rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/>`,
+		"ka-GE": `<rect width="30" height="20" fill="#fff"/><rect x="13.3" width="3.4" height="20" fill="#ff0000"/><rect y="8.3" width="30" height="3.4" fill="#ff0000"/><path d="M6 2.5v4M4 4.5h4M24 2.5v4M22 4.5h4M6 13.5v4M4 15.5h4M24 13.5v4M22 15.5h4" stroke="#ff0000" stroke-width="1.1"/>`,
+		"ko-KR": `<rect width="30" height="20" fill="#fff"/><path d="M15 5a5 5 0 0 1 0 10 2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 0 0-5z" fill="#0047a0"/><path d="M15 5a2.5 2.5 0 0 1 0 5 2.5 2.5 0 0 0 0 5 5 5 0 0 1 0-10z" fill="#cd2e3a" transform="rotate(180 15 10)"/><g stroke="#000" stroke-width=".9"><path d="M4.5 3.5l3 2M4 4.5l3 2M3.5 5.5l3 2M22.5 13.5l3 2M22 14.5l3 2M21.5 15.5l3 2M22.5 6.5l3-2M22 5.5l3-2M4.5 16.5l3-2M4 15.5l3-2"/></g>`,
+		"lt-LT": bands(["#fdb913", "#006a44", "#c1272d"]),
+		"lv-LV": `<rect width="30" height="20" fill="#9e3039"/><rect y="8" width="30" height="4" fill="#fff"/>`,
+		"nl-NL": bands(["#ae1c28", "#fff", "#21468b"]),
+		"no-NO": nordic("#ba0c2f", "#00205b", "#fff"),
+		"pt-PT": `<rect width="30" height="20" fill="#ff0000"/><rect width="12" height="20" fill="#006600"/><circle cx="12" cy="10" r="3.6" fill="#ffff00"/><circle cx="12" cy="10" r="2.2" fill="#ff0000" stroke="#fff" stroke-width=".7"/>`,
+		"ro-RO": bands(["#002b7f", "#fcd116", "#ce1126"], true),
+		"sk-SK": `${bands(["#fff", "#0b4ea2", "#ee1c25"])}<path d="M7 5h6v6.5a3.5 3.5 0 0 1-3 3.3 3.5 3.5 0 0 1-3-3.3z" fill="#ee1c25" stroke="#fff" stroke-width=".7"/><path d="M10 6.2v6.5M8.3 8h3.4M8.8 9.6h2.4" stroke="#fff" stroke-width=".8"/>`,
+		"sr-CS": bands(["#c6363c", "#0c4076", "#fff"]),
+		"sv-SE": nordic("#006aa7", "#fecc00"),
+		"th-TH": `<rect width="30" height="20" fill="#a51931"/><rect y="3.33" width="30" height="13.34" fill="#f4f5f8"/><rect y="6.67" width="30" height="6.66" fill="#2d2a4a"/>`,
+		"uk-UA": bands(["#0057b7", "#ffd700"]),
+		"vi-VN": `<rect width="30" height="20" fill="#da251d"/><g fill="#ffff00">${star(15, 10.4, 5, 1.95)}</g>`,
+		"zh-HK": `<rect width="30" height="20" fill="#de2910"/><g fill="#fff">${[0, 72, 144, 216, 288].map(a => `<ellipse cx="15" cy="6.6" rx="1.6" ry="3.2" transform="rotate(${a} 15 10)"/>`).join("")}</g><circle cx="15" cy="10" r=".8" fill="#de2910"/>`,
+		"zh-TW": `<rect width="30" height="20" fill="#fe0000"/><rect width="15" height="10" fill="#000095"/><g fill="#fff">${star(7.5, 5, 3.6, 1.6, -90).replace("<polygon", "<polygon")}</g><circle cx="7.5" cy="5" r="1.9" fill="#000095"/><circle cx="7.5" cy="5" r="1.5" fill="#fff"/>`
+	});
+
 	window.flagSvg = code => `<svg class="flag" viewBox="0 0 30 20" aria-hidden="true">${window.FLAGS[code] || ""}</svg>`;
 })();
 

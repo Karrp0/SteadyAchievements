@@ -19,7 +19,7 @@
   - Geliştirici / yayıncı engeli, kara liste ve izin listesi var. ASF'nin kendi kara listesine de uyar.
   - Sadece oyun sunucusunun açabildiği (korumalı) başarımlara hiç dokunulmaz.
 - **Otomatik oyun (isteğe bağlı):** ASF'nin düşüreceği kart kalmadığında kütüphanendeki uygun oyunları kendisi seçip oynatır. Senin oyun listen de oynanmaya devam eder. Belirli aralıklarla kontrolü ASF'ye bırakır ki yeni kartlar kaçmasın.
-- **Web paneli** (`/steady/`): oynanan oyunlar ve neden atlandıkları, ilerleyen ve biten oyunlar, sıradaki başarım ve tahmini tarihi, her oyunun başarım listesi, ayarlar ve geçmiş. ASF panelinin görünümünde; tema rengi, karanlık mod, dil ve şifre ASF ile ortak. 9 dil: Türkçe, English, Deutsch, Español, Français, Polski, Português (BR), Русский, 简体中文.
+- **Web paneli** (`/steady/`): oynanan oyunlar ve neden atlandıkları, ilerleyen ve biten oyunlar, sıradaki başarım ve tahmini tarihi, her oyunun başarım listesi, ayarlar ve geçmiş. ASF panelinin görünümünde; tema rengi, karanlık mod, dil ve şifre ASF ile ortak. ASF'nin 40 dilinin hepsi var: Türkçe, İngilizce, Almanca, İspanyolca, Fransızca, Lehçe, Portekizce ve Rusça ile Basitleştirilmiş Çince eksiksiz; diğerlerinde ana ekranlar çevrili, uzun açıklamalar İngilizce.
 - **Discord:** oyun bitince, istersen her başarımda, günlük özet olarak ve sorun çıkınca haber verir.
 - **Gizlilik:** Steam dışında hiçbir sunucuya bağlanmaz. Tek istisna, Discord'u kendin açarsan senin webhook adresin.
 
