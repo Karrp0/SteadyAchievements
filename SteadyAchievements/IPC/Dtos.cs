@@ -79,6 +79,13 @@ public sealed class HistoryDto {
 	public double Percent { get; init; }
 }
 
+public sealed class LibraryGameDto {
+	public uint AppId { get; init; }
+	public string Name { get; init; } = "";
+	public long PlaytimeMinutes { get; init; }
+	public string Capsule { get; init; } = "";
+}
+
 public sealed class GameDetailDto {
 	public uint AppId { get; init; }
 	public string Name { get; init; } = "";

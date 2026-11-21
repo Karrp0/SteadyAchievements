@@ -433,6 +433,22 @@ p.form-item__description { margin: -.5em 0 1em; }
 	border-top: 1px solid var(--color-border);
 }
 
+/* ---------- game picker ---------- */
+
+.box__actions { display: flex; gap: .5em; margin-top: .75em; }
+.input-row { display: flex; gap: .5em; }
+.input-row .form-item__input { flex: 1; }
+.input-row .button { flex: none; }
+.picked { display: flex; flex-wrap: wrap; gap: .3em; margin-top: .4em; }
+.picked span { font-size: .8em; padding: .1em .5em; border-radius: var(--radius); background: var(--color-background); color: var(--color-text-secondary); }
+
+.picker__tools { display: grid; grid-template-columns: 1fr 12em; gap: .5em; margin-bottom: .75em; }
+.picker__list { max-height: min(60vh, 560px); overflow-y: auto; margin-bottom: .75em; }
+.picker__item { display: flex; align-items: center; gap: .75em; padding: .45em .5em; border-radius: var(--radius); cursor: pointer; }
+.picker__item:hover { background: var(--color-background-light); }
+.picker__item input { accent-color: var(--color-theme); flex: none; }
+.picker__count { margin-right: auto; align-self: center; }
+
 /* ---------- footer ---------- */
 
 .footer {
@@ -480,6 +496,8 @@ p.form-item__description { margin: -.5em 0 1em; }
 /* ---------- small screens: the side menu slides in over the page ---------- */
 
 @media (max-width: 760px) {
+	.picker__tools { grid-template-columns: 1fr; }
+	.input-row { flex-wrap: wrap; }
 	.app, .nav--small .app { padding-left: 0; }
 	.navbar__brand, .nav--small .navbar__brand { width: auto; padding: 0 .9rem; font-size: 1.1em; }
 	.nav--small .navbar__brand::after { content: none; }

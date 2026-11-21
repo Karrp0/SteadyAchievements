@@ -688,6 +688,33 @@ internal sealed class BotWorker : IDisposable {
 
 	internal Task<BotSettings> GetSettings() => Locked(() => Settings.Clone());
 
+	// The account's games (name, playtime) for the panel's game picker
+	internal async Task<List<LibraryGameDto>?> GetLibrary() {
+		await Gate.WaitAsync().ConfigureAwait(false);
+
+		try {
+			if ((Owned.Count == 0) && Bot.IsConnectedAndLoggedOn) {
+				OwnedFetchedUtc = DateTime.MinValue;
+				await RefreshOwned(DateTime.UtcNow).ConfigureAwait(false);
+			}
+
+			if (Owned.Count == 0) {
+				return null;
+			}
+
+			return Owned.Values.OrderBy(static g => g.Name, StringComparer.OrdinalIgnoreCase).Select(
+				static g => new LibraryGameDto {
+					AppId = g.AppId,
+					Name = g.Name,
+					PlaytimeMinutes = g.PlaytimeMinutes,
+					Capsule = AppInfo.Peek(g.AppId) is { CapsuleImage.Length: > 0 } facts ? AppFacts.ImageUrl(g.AppId, facts.CapsuleImage, "") : ""
+				}
+			).ToList();
+		} finally {
+			Gate.Release();
+		}
+	}
+
 	internal async Task<List<string>> UpdateSettings(BotSettings incoming) {
 		ArgumentNullException.ThrowIfNull(incoming);
 

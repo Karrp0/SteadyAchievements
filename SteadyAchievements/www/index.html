@@ -40,6 +40,7 @@
 
 			<div class="side-menu__category" data-i18n="nav.groupConfig"></div>
 			<a class="side-menu__item" href="#settings" data-tab="settings"><i data-icon="sliders"></i><span data-i18n="nav.settings"></span></a>
+			<a class="side-menu__item" href="#idle" data-tab="idle"><i data-icon="uptime"></i><span data-i18n="nav.idle"></span></a>
 			<a class="side-menu__item" href="#help" data-tab="help"><i data-icon="help"></i><span data-i18n="nav.help"></span></a>
 
 			<div class="side-menu__category">ASF</div>
@@ -161,8 +162,16 @@
 						<label class="check"><input type="checkbox" name="ExcludeOnline"> <span data-i18n="set.online"></span></label>
 						<label class="check"><input type="checkbox" name="ProtectDlc"> <span data-i18n="set.dlc"></span></label>
 						<label class="check"><input type="checkbox" name="RespectAsfBlacklist"> <span data-i18n="set.asfBlacklist"></span></label>
-						<label class="form-item"><span class="form-item__label" data-i18n="set.blacklist"></span><input class="form-item__input" type="text" name="Blacklist" inputmode="numeric" placeholder="730, 570"><span class="form-item__description" data-i18n="set.blacklistHelp"></span></label>
-						<label class="form-item"><span class="form-item__label" data-i18n="set.allowlist"></span><input class="form-item__input" type="text" name="Allowlist" inputmode="numeric"><span class="form-item__description" data-i18n="set.allowlistHelp"></span></label>
+						<div class="form-item"><label class="form-item__label" for="f-blacklist" data-i18n="set.blacklist"></label>
+							<div class="input-row"><input class="form-item__input" id="f-blacklist" type="text" name="Blacklist" inputmode="numeric" placeholder="730, 570"><button type="button" class="button" data-pick="Blacklist" data-i18n="set.pick"></button></div>
+							<span class="form-item__description" data-i18n="set.blacklistHelp"></span>
+							<div class="picked" data-picked="Blacklist"></div>
+						</div>
+						<div class="form-item"><label class="form-item__label" for="f-allowlist" data-i18n="set.allowlist"></label>
+							<div class="input-row"><input class="form-item__input" id="f-allowlist" type="text" name="Allowlist" inputmode="numeric"><button type="button" class="button" data-pick="Allowlist" data-i18n="set.pick"></button></div>
+							<span class="form-item__description" data-i18n="set.allowlistHelp"></span>
+							<div class="picked" data-picked="Allowlist"></div>
+						</div>
 						<label class="form-item"><span class="form-item__label" data-i18n="set.developers"></span><input class="form-item__input" type="text" name="BlockedDevelopers" placeholder="Valve"><span class="form-item__description" data-i18n="set.namesHelp"></span></label>
 						<label class="form-item"><span class="form-item__label" data-i18n="set.publishers"></span><input class="form-item__input" type="text" name="BlockedPublishers"></label>
 					</div>
@@ -190,6 +199,22 @@
 						<button type="submit" class="button button--confirm" data-i18n="set.save"></button>
 					</div>
 				</form>
+			</section>
+
+			<!-- Idle games (ASF's GamesPlayedWhileIdle) -->
+			<section id="tab-idle" class="tab" hidden>
+				<div class="box">
+					<h3 class="box__title"><span data-i18n="idle.title"></span> <span id="idle-count" class="muted"></span></h3>
+					<p class="form-item__description" data-i18n="idle.help"></p>
+					<div id="idle-list"></div>
+					<div class="box__actions">
+						<button type="button" class="button" id="idle-add" data-i18n="idle.add"></button>
+					</div>
+				</div>
+				<div class="save-bar">
+					<span id="idle-msg" class="muted"></span>
+					<button type="button" class="button button--confirm" id="idle-save" data-i18n="idle.save"></button>
+				</div>
 			</section>
 
 			<!-- History -->
@@ -220,6 +245,26 @@
 		</div>
 		<div id="detail-tools" class="muted small"></div>
 		<div id="detail-body"></div>
+	</dialog>
+
+	<dialog id="picker" class="modal">
+		<div class="modal__head">
+			<h3 data-i18n="picker.title"></h3>
+			<button type="button" class="modal__close" id="picker-close" aria-label="Close">✕</button>
+		</div>
+		<div class="picker__tools">
+			<input id="picker-search" class="form-item__input" type="search" autocomplete="off">
+			<select id="picker-sort" class="form-item__input">
+				<option value="playtime" data-i18n="picker.byPlaytime"></option>
+				<option value="name" data-i18n="picker.byName"></option>
+			</select>
+		</div>
+		<div id="picker-list" class="picker__list"></div>
+		<div class="modal__actions">
+			<span id="picker-count" class="muted picker__count"></span>
+			<button type="button" value="cancel" class="button" data-i18n="picker.cancel"></button>
+			<button type="button" value="ok" class="button button--confirm" data-i18n="picker.ok"></button>
+		</div>
 	</dialog>
 
 	<dialog id="confirm-real" class="modal modal--small">

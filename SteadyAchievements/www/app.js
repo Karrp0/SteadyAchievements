@@ -10,7 +10,8 @@
 	const KEYS = { bot: "steady.bot" };
 	const ASF_KEYS = { password: "asf-ui:ipc-password", theme: "asf-ui:layout:theme", dark: "asf-ui:layout:dark-mode", locale: "asf-ui:locale", small: "asf-ui:layout:small-navigation" };
 	const THEMES = [["blue", "#367fa9"], ["red", "#a92616"], ["teal", "#359392"], ["purple", "#504d8e"], ["green", "#00a65a"], ["orange", "#d58d18"]];
-	const PAGES = ["overview", "games", "history", "settings", "help"];
+	const PAGES = ["overview", "games", "history", "settings", "idle", "help"];
+	const MAX_IDLE_GAMES = 32;
 
 	const $ = (sel, root = document) => root.querySelector(sel);
 	const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -244,6 +245,7 @@
 		document.documentElement.classList.remove("nav--open");
 
 		if (state.page === "settings") loadSettings();
+		else if (state.page === "idle") loadIdle();
 		else refreshStatus();
 	}
 
@@ -491,6 +493,7 @@
 		form.elements.from.value = from.padStart(5, "0");
 		form.elements.to.value = to.padStart(5, "0");
 		message($("#save-msg"), "");
+		showPickedNames();
 	}
 
 	function collectSettings() {
@@ -551,6 +554,161 @@
 			message(msg, ok === false ? t("set.testFail") : t("set.testOk"), ok === false);
 		} catch (e) {
 			if (e.status !== 401) message(msg, t("set.testFail"), true);
+		}
+	}
+
+	// ------------------------------------------------------------ library and game picker
+
+	async function loadLibrary(force = false) {
+		if (!force && state.library && (Date.now() - state.libraryAt < 10 * 60000)) return state.library;
+		state.library = await api(`${encodeURIComponent(state.bot)}/Library`);
+		state.libraryAt = Date.now();
+		state.libraryById = new Map(state.library.map(g => [g.AppId, g]));
+		return state.library;
+	}
+
+	const gameName = appId => (state.libraryById && state.libraryById.get(appId)?.Name) || `AppID ${appId}`;
+	const hours = minutes => new Intl.NumberFormat(state.locale, { maximumFractionDigits: 1 }).format(minutes / 60);
+
+	// Opens the library picker; resolves to the chosen AppIDs, or null when cancelled
+	async function pickGames(selected, max = Infinity) {
+		const dialog = $("#picker");
+		const list = $("#picker-list");
+		const search = $("#picker-search");
+		const chosen = new Set(selected);
+		search.value = "";
+		search.placeholder = t("picker.search");
+		list.replaceChildren(h("p", { class: "muted" }, t("ach.loading")));
+		dialog.showModal();
+
+		let games;
+		try {
+			games = await loadLibrary();
+		} catch {
+			list.replaceChildren(h("p", { class: "text-error" }, t("picker.failed")));
+			games = [];
+		}
+
+		const count = () => {
+			$("#picker-count").textContent = Number.isFinite(max) ? t("picker.countMax", chosen.size, max) : t("picker.count", chosen.size);
+		};
+
+		const render = () => {
+			const query = search.value.trim().toLocaleLowerCase(state.locale);
+			const byPlaytime = $("#picker-sort").value === "playtime";
+			const matches = games
+				.filter(g => !query || g.Name.toLocaleLowerCase(state.locale).includes(query) || String(g.AppId) === query)
+				.sort((a, b) => (chosen.has(b.AppId) - chosen.has(a.AppId)) || (byPlaytime ? b.PlaytimeMinutes - a.PlaytimeMinutes : a.Name.localeCompare(b.Name, state.locale)))
+				.slice(0, 300);
+
+			list.replaceChildren(...matches.map(g => {
+				const box = h("input", { type: "checkbox" });
+				box.checked = chosen.has(g.AppId);
+				box.addEventListener("change", () => {
+					if (box.checked && chosen.size >= max) {
+						box.checked = false;
+						alert(t("idle.limit", max));
+						return;
+					}
+					box.checked ? chosen.add(g.AppId) : chosen.delete(g.AppId);
+					count();
+				});
+				return h("label", { class: "picker__item" },
+					box,
+					capsule(g.AppId, g.Capsule, g.Name),
+					h("div", { class: "row__main" }, h("div", { class: "row__name" }, g.Name), h("div", { class: "muted small" }, `AppID ${g.AppId} · ${t("picker.played", hours(g.PlaytimeMinutes))}`))
+				);
+			}));
+
+			if (!matches.length && games.length) list.replaceChildren(h("p", { class: "empty" }, t("picker.none")));
+			count();
+		};
+
+		search.oninput = render;
+		$("#picker-sort").onchange = render;
+		render();
+		search.focus();
+
+		return new Promise(resolve => {
+			const done = value => { dialog.close(); resolve(value); };
+			$$(".modal__actions button", dialog).forEach(b => { b.onclick = () => done(b.value === "ok" ? [...chosen] : null); });
+			$("#picker-close").onclick = () => done(null);
+			dialog.oncancel = () => resolve(null);
+		});
+	}
+
+	// Names under the blacklist / allowlist inputs, so the AppIDs are readable
+	async function showPickedNames() {
+		try { await loadLibrary(); } catch { return; }
+		for (const el of $$("[data-picked]")) {
+			const ids = $(`[name="${el.dataset.picked}"]`).value.split(/[\s,;]+/).map(Number).filter(n => n > 0);
+			el.replaceChildren(...ids.map(id => h("span", {}, gameName(id))));
+		}
+	}
+
+	async function pickInto(field) {
+		const input = $(`[name="${field}"]`);
+		const current = input.value.split(/[\s,;]+/).map(Number).filter(n => Number.isInteger(n) && n > 0);
+		const picked = await pickGames(current);
+		if (picked) {
+			input.value = picked.join(", ");
+			showPickedNames();
+		}
+	}
+
+	// ------------------------------------------------------------ idle games (ASF's GamesPlayedWhileIdle)
+
+	async function loadIdle() {
+		const msg = $("#idle-msg");
+		message(msg, "");
+		try {
+			const bots = await request(`${ASF_API}/Bot/${encodeURIComponent(state.bot)}`);
+			state.botConfig = bots[state.bot].BotConfig;
+			state.idle = [...(state.botConfig.GamesPlayedWhileIdle || [])];
+			renderIdle();
+			await loadLibrary().catch(() => null);
+			renderIdle();
+		} catch (e) {
+			if (e.status !== 401) message(msg, t("err.server", e.message), true);
+		}
+	}
+
+	function renderIdle() {
+		const list = $("#idle-list");
+		$("#idle-count").textContent = `(${state.idle.length} / ${MAX_IDLE_GAMES})`;
+		list.replaceChildren();
+		if (!state.idle.length) list.append(h("p", { class: "empty" }, t("idle.empty")));
+		for (const appId of state.idle) {
+			const game = state.libraryById && state.libraryById.get(appId);
+			list.append(h("div", { class: "row" },
+				capsule(appId, game && game.Capsule, gameName(appId)),
+				h("div", { class: "row__main" },
+					h("div", { class: "row__name" }, gameName(appId)),
+					h("div", { class: "muted small" }, `AppID ${appId}${game ? ` · ${t("picker.played", hours(game.PlaytimeMinutes))}` : ""}`)
+				),
+				h("div", { class: "row__actions" }, h("button", { type: "button", class: "button button--small", onclick: () => { state.idle = state.idle.filter(id => id !== appId); renderIdle(); } }, t("idle.remove")))
+			));
+		}
+	}
+
+	async function addIdle() {
+		const picked = await pickGames(state.idle, MAX_IDLE_GAMES);
+		if (!picked) return;
+		// Keep the existing order, append the new ones
+		state.idle = [...state.idle.filter(id => picked.includes(id)), ...picked.filter(id => !state.idle.includes(id))];
+		renderIdle();
+	}
+
+	async function saveIdle() {
+		const msg = $("#idle-msg");
+		if (!state.botConfig) return;
+		try {
+			// Same call ASF's own config editor makes; ASF keeps the stored password and other secrets
+			await request(`${ASF_API}/Bot/${encodeURIComponent(state.bot)}`, { method: "POST", body: { BotConfig: { ...state.botConfig, GamesPlayedWhileIdle: state.idle } } });
+			state.botConfig = { ...state.botConfig, GamesPlayedWhileIdle: [...state.idle] };
+			message(msg, t("idle.saved"));
+		} catch (e) {
+			if (e.status !== 401) message(msg, t("err.server", e.message), true);
 		}
 	}
 
@@ -620,6 +778,7 @@
 			state.bot = e.target.value;
 			store.set(KEYS.bot, state.bot);
 			state.status = null;
+			state.library = null;
 			showPage(state.page);
 		});
 
@@ -632,6 +791,10 @@
 		});
 
 		$("#settings-form").addEventListener("submit", saveSettings);
+		$$("[data-pick]").forEach(b => b.addEventListener("click", () => pickInto(b.dataset.pick)));
+		["Blacklist", "Allowlist"].forEach(name => $(`[name="${name}"]`).addEventListener("change", showPickedNames));
+		$("#idle-add").addEventListener("click", addIdle);
+		$("#idle-save").addEventListener("click", saveIdle);
 		$("#test-discord").addEventListener("click", testDiscord);
 		$("#detail-close").addEventListener("click", () => $("#detail").close());
 		$("#detail").addEventListener("click", e => { if (e.target.id === "detail") e.target.close(); });

@@ -52,6 +52,20 @@ public sealed class SteadyController : ArchiController {
 		return errors.Count == 0 ? Ok(new GenericResponse(true)) : BadRequest(new GenericResponse(false, string.Join(" ", errors)));
 	}
 
+	[HttpGet("{botName:required}/Library")]
+	[ProducesResponseType<GenericResponse<IReadOnlyList<LibraryGameDto>>>((int) HttpStatusCode.OK)]
+	public async Task<ActionResult<GenericResponse>> Library(string botName) {
+		BotWorker? worker = SteadyAchievementsPlugin.GetWorker(botName);
+
+		if (worker == null) {
+			return NotFoundBot(botName);
+		}
+
+		List<LibraryGameDto>? games = await worker.GetLibrary().ConfigureAwait(false);
+
+		return games == null ? StatusCode((int) HttpStatusCode.ServiceUnavailable, new GenericResponse(false, "Steam")) : Ok(new GenericResponse<IReadOnlyList<LibraryGameDto>>(games));
+	}
+
 	[HttpGet("{botName:required}/Games/{appId:required}")]
 	[ProducesResponseType<GenericResponse<GameDetailDto>>((int) HttpStatusCode.OK)]
 	public async Task<ActionResult<GenericResponse>> Game(string botName, uint appId) {
