@@ -9,19 +9,18 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
 
 ## Screenshots
 
-![Overview (dark theme)](docs/images/overview.png)
+<p align="center"><img src="docs/images/overview.png" alt="Overview (dark theme)"><br><sub><b>Overview (dark theme)</b></sub></p>
 
-| Games | A game's achievements and plan |
-| --- | --- |
-| ![Games](docs/images/games.png) | ![A game's achievements and plan](docs/images/achievements.png) |
-| **Settings (light theme)** | **Hour boosting** |
-| ![Settings (light theme)](docs/images/settings.png) | ![Hour boosting](docs/images/hour-boosting-list.png) |
-| **Hour boosting: picking games from the library** | **40 languages** |
-| ![Hour boosting: picking games from the library](docs/images/hour-boosting.png) | <img src="docs/images/languages.png" alt="40 languages" width="420"> |
+<table>
+<tr><td align="center" width="50%"><img src="docs/images/games.png" alt="Games"><br><sub><b>Games</b></sub></td><td align="center" width="50%"><img src="docs/images/achievements.png" alt="A game's achievements and plan"><br><sub><b>A game's achievements and plan</b></sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/images/settings.png" alt="Settings (light theme)"><br><sub><b>Settings (light theme)</b></sub></td><td align="center" width="50%"><img src="docs/images/hour-boosting-list.png" alt="Hour boosting"><br><sub><b>Hour boosting</b></sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/images/hour-boosting.png" alt="Hour boosting: picking games from the library"><br><sub><b>Hour boosting: picking games from the library</b></sub></td><td align="center" width="50%"><img src="docs/images/languages.png" alt="40 languages"><br><sub><b>40 languages</b></sub></td></tr>
+</table>
 
-| On a phone |
-| --- |
-| <img src="docs/images/mobile.png" alt="On a phone" width="220"> <img src="docs/images/mobile-menu.png" alt="On a phone" width="220"> |
+<p align="center">
+<img src="docs/images/mobile.png" alt="On a phone: home screen and menu" width="260">&nbsp;&nbsp;&nbsp;<img src="docs/images/mobile-menu.png" alt="Menu on a phone" width="260"><br>
+<sub><b>On a phone: home screen and menu</b></sub>
+</p>
 
 ## What it does
 

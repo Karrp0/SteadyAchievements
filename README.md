@@ -9,19 +9,18 @@
 
 ## Ekran görüntüleri
 
-![Genel bakış (koyu tema)](docs/images/overview.png)
+<p align="center"><img src="docs/images/overview.png" alt="Genel bakış (koyu tema)"><br><sub><b>Genel bakış (koyu tema)</b></sub></p>
 
-| Oyunlar | Bir oyunun başarımları ve planı |
-| --- | --- |
-| ![Oyunlar](docs/images/games.png) | ![Bir oyunun başarımları ve planı](docs/images/achievements.png) |
-| **Ayarlar (açık tema)** | **Saat kasma** |
-| ![Ayarlar (açık tema)](docs/images/settings.png) | ![Saat kasma](docs/images/hour-boosting-list.png) |
-| **Saat kasma: kütüphaneden oyun seçme** | **40 dil** |
-| ![Saat kasma: kütüphaneden oyun seçme](docs/images/hour-boosting.png) | <img src="docs/images/languages.png" alt="40 dil" width="420"> |
+<table>
+<tr><td align="center" width="50%"><img src="docs/images/games.png" alt="Oyunlar"><br><sub><b>Oyunlar</b></sub></td><td align="center" width="50%"><img src="docs/images/achievements.png" alt="Bir oyunun başarımları ve planı"><br><sub><b>Bir oyunun başarımları ve planı</b></sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/images/settings.png" alt="Ayarlar (açık tema)"><br><sub><b>Ayarlar (açık tema)</b></sub></td><td align="center" width="50%"><img src="docs/images/hour-boosting-list.png" alt="Saat kasma"><br><sub><b>Saat kasma</b></sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/images/hour-boosting.png" alt="Saat kasma: kütüphaneden oyun seçme"><br><sub><b>Saat kasma: kütüphaneden oyun seçme</b></sub></td><td align="center" width="50%"><img src="docs/images/languages.png" alt="40 dil"><br><sub><b>40 dil</b></sub></td></tr>
+</table>
 
-| Telefonda |
-| --- |
-| <img src="docs/images/mobile.png" alt="Telefonda" width="220"> <img src="docs/images/mobile-menu.png" alt="Telefonda" width="220"> |
+<p align="center">
+<img src="docs/images/mobile.png" alt="Telefonda: ana ekran ve menü" width="260">&nbsp;&nbsp;&nbsp;<img src="docs/images/mobile-menu.png" alt="Telefonda menü" width="260"><br>
+<sub><b>Telefonda: ana ekran ve menü</b></sub>
+</p>
 
 ## Ne yapar?
 
