@@ -14,12 +14,14 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
 | Games | A game's achievements and plan |
 | --- | --- |
 | ![Games](docs/images/games.png) | ![A game's achievements and plan](docs/images/achievements.png) |
-| **Settings (light theme)** | **Hour boosting: picking games from the library** |
-| ![Settings (light theme)](docs/images/settings.png) | ![Hour boosting: picking games from the library](docs/images/hour-boosting.png) |
+| **Settings (light theme)** | **Hour boosting** |
+| ![Settings (light theme)](docs/images/settings.png) | ![Hour boosting](docs/images/hour-boosting-list.png) |
+| **Hour boosting: picking games from the library** | **40 languages** |
+| ![Hour boosting: picking games from the library](docs/images/hour-boosting.png) | <img src="docs/images/languages.png" alt="40 languages" width="420"> |
 
-| 40 languages | On a phone |
-| --- | --- |
-| <img src="docs/images/languages.png" alt="40 languages" width="420"> | <img src="docs/images/mobile.png" alt="On a phone" width="200"> <img src="docs/images/mobile-menu.png" alt="On a phone" width="200"> |
+| On a phone |
+| --- |
+| <img src="docs/images/mobile.png" alt="On a phone" width="220"> <img src="docs/images/mobile-menu.png" alt="On a phone" width="220"> |
 
 ## What it does
 

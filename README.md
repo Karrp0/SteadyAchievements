@@ -14,12 +14,14 @@
 | Oyunlar | Bir oyunun başarımları ve planı |
 | --- | --- |
 | ![Oyunlar](docs/images/games.png) | ![Bir oyunun başarımları ve planı](docs/images/achievements.png) |
-| **Ayarlar (açık tema)** | **Saat kasma: kütüphaneden oyun seçme** |
-| ![Ayarlar (açık tema)](docs/images/settings.png) | ![Saat kasma: kütüphaneden oyun seçme](docs/images/hour-boosting.png) |
+| **Ayarlar (açık tema)** | **Saat kasma** |
+| ![Ayarlar (açık tema)](docs/images/settings.png) | ![Saat kasma](docs/images/hour-boosting-list.png) |
+| **Saat kasma: kütüphaneden oyun seçme** | **40 dil** |
+| ![Saat kasma: kütüphaneden oyun seçme](docs/images/hour-boosting.png) | <img src="docs/images/languages.png" alt="40 dil" width="420"> |
 
-| 40 dil | Telefonda |
-| --- | --- |
-| <img src="docs/images/languages.png" alt="40 dil" width="420"> | <img src="docs/images/mobile.png" alt="Telefonda" width="200"> <img src="docs/images/mobile-menu.png" alt="Telefonda" width="200"> |
+| Telefonda |
+| --- |
+| <img src="docs/images/mobile.png" alt="Telefonda" width="220"> <img src="docs/images/mobile-menu.png" alt="Telefonda" width="220"> |
 
 ## Ne yapar?
 
