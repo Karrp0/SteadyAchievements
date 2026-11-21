@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="robots" content="noindex">
-	<title>SteadyAchievements · ASF</title>
+	<title>SteadyAchievements</title>
 	<link rel="icon" href="/images/logo.png">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600">
 	<link rel="stylesheet" href="style.css">
@@ -12,23 +12,51 @@
 <body>
 	<div class="app" id="app">
 		<header class="navbar">
-			<a class="navbar__brand" href="/" title="ArchiSteamFarm">
-				<img src="/images/logo.png" alt="" width="24" height="24">
-				<span>ASF</span>
-			</a>
-			<span class="navbar__title">SteadyAchievements</span>
+			<a class="navbar__brand" href="#overview"><b>Steady</b>Achievements</a>
+			<button type="button" class="navbar__button" id="menu-toggle" data-title="top.menu"><i data-icon="menu"></i></button>
+			<select id="bot" class="navbar__bot" aria-label="Bot" hidden></select>
 			<div class="navbar__right">
-				<select id="bot" aria-label="Bot" hidden></select>
-				<button type="button" class="navbar__lang" id="lang" aria-label="Language">TR</button>
+				<div class="dropdown">
+					<button type="button" class="navbar__button" id="lang-toggle" data-title="top.language"><i data-icon="language"></i></button>
+					<div class="dropdown__panel dropdown__panel--languages" id="lang-menu" hidden></div>
+				</div>
+				<div class="dropdown">
+					<button type="button" class="navbar__button" id="look-toggle" data-title="top.appearance"><i data-icon="gears"></i></button>
+					<div class="dropdown__panel" id="look-menu" hidden>
+						<div class="dropdown__label" data-i18n="top.theme"></div>
+						<div class="swatches" id="swatches"></div>
+						<label class="check"><input type="checkbox" id="dark-toggle"> <span data-i18n="top.dark"></span></label>
+					</div>
+				</div>
+				<button type="button" class="navbar__button" id="logout" data-title="top.logout"><i data-icon="logout"></i></button>
 			</div>
 		</header>
 
 		<nav class="side-menu" aria-label="Menu">
-			<button type="button" data-tab="status" data-i18n="tab.status"></button>
-			<button type="button" data-tab="settings" data-i18n="tab.settings"></button>
-			<button type="button" data-tab="history" data-i18n="tab.history"></button>
-			<button type="button" data-tab="help" data-i18n="tab.help"></button>
-			<a class="side-menu__back" href="/" data-i18n="nav.back"></a>
+			<div class="side-menu__category" data-i18n="nav.groupAchievements"></div>
+			<a class="side-menu__item" href="#overview" data-tab="overview"><i data-icon="gauge"></i><span data-i18n="nav.overview"></span></a>
+			<a class="side-menu__item" href="#games" data-tab="games"><i data-icon="gamepad"></i><span data-i18n="nav.games"></span></a>
+			<a class="side-menu__item" href="#history" data-tab="history"><i data-icon="history"></i><span data-i18n="nav.history"></span></a>
+
+			<div class="side-menu__category" data-i18n="nav.groupConfig"></div>
+			<a class="side-menu__item" href="#settings" data-tab="settings"><i data-icon="sliders"></i><span data-i18n="nav.settings"></span></a>
+			<a class="side-menu__item" href="#help" data-tab="help"><i data-icon="help"></i><span data-i18n="nav.help"></span></a>
+
+			<div class="side-menu__category">ASF</div>
+			<a class="side-menu__item" href="/"><i data-icon="back"></i><span data-i18n="nav.asf"></span></a>
+
+			<div class="side-menu__stats" id="side-stats" hidden>
+				<div class="side-menu__category" data-i18n="nav.stats"></div>
+				<div class="tiles">
+					<div class="tile tile--green"><strong id="s-unlocked">0</strong><span id="s-unlocked-label" data-i18n="stat.unlocked"></span></div>
+					<div class="tile tile--teal"><strong id="s-progress">0</strong><span data-i18n="stat.inProgress"></span></div>
+					<div class="tile tile--gray"><strong id="s-completed">0</strong><span data-i18n="stat.completed"></span></div>
+					<div class="tile tile--light"><strong id="s-skipped">0</strong><span data-i18n="stat.skipped"></span></div>
+				</div>
+				<div class="side-stat"><i data-icon="calendar"></i><span data-i18n="stat.today"></span><b id="s-today"></b></div>
+				<div class="side-stat"><i data-icon="clock"></i><span data-i18n="stat.next"></span><b id="s-next"></b></div>
+				<div class="side-stat"><i data-icon="flask"></i><span data-i18n="stat.mode"></span><b id="s-mode"></b></div>
+			</div>
 		</nav>
 
 		<main class="main-container">
@@ -36,18 +64,25 @@
 			<section id="login" class="box box--narrow" hidden>
 				<h2 class="box__title" data-i18n="login.title"></h2>
 				<p class="muted" data-i18n="login.text"></p>
-				<form id="login-form" class="form-item">
-					<input id="login-password" class="form-item__input" type="password" autocomplete="current-password" required>
+				<form id="login-form">
+					<input id="login-password" class="form-item__input" type="password" autocomplete="current-password" placeholder="IPC password" required>
 					<button type="submit" class="button button--confirm" data-i18n="login.button"></button>
 				</form>
 				<p id="login-error" class="text-error" hidden></p>
 			</section>
 
-			<!-- Status -->
-			<section id="tab-status" class="tab" hidden>
+			<!-- Overview -->
+			<section id="tab-overview" class="tab" hidden>
 				<div id="trimmed" class="notice" hidden data-i18n="status.trimmed"></div>
 
+				<div class="info-boxes">
+					<div class="info-box"><span class="info-box__icon"><i data-icon="trophy"></i></span><div><div class="info-box__label" data-i18n="info.today"></div><div class="info-box__value" id="i-today"></div></div></div>
+					<div class="info-box"><span class="info-box__icon"><i data-icon="gamepad"></i></span><div><div class="info-box__label" data-i18n="info.games"></div><div class="info-box__value" id="i-games"></div></div></div>
+					<div class="info-box"><span class="info-box__icon"><i data-icon="clock"></i></span><div><div class="info-box__label" data-i18n="info.next"></div><div class="info-box__value" id="i-next"></div></div></div>
+				</div>
+
 				<div class="box">
+					<h3 class="box__title" data-i18n="status.summary"></h3>
 					<table class="facts">
 						<tr><th data-i18n="status.mode"></th><td id="f-mode"></td></tr>
 						<tr><th data-i18n="status.plugin"></th><td id="f-enabled"></td></tr>
@@ -61,12 +96,14 @@
 					<h3 class="box__title" data-i18n="status.playing"></h3>
 					<div id="playing"></div>
 				</div>
+			</section>
 
+			<!-- Games -->
+			<section id="tab-games" class="tab" hidden>
 				<div class="box">
 					<h3 class="box__title" data-i18n="status.games"></h3>
 					<div id="games"></div>
 				</div>
-
 				<div class="box">
 					<h3 class="box__title"><span data-i18n="status.completed"></span> <span id="completed-count" class="muted"></span></h3>
 					<div id="completed"></div>
@@ -86,7 +123,7 @@
 						</div>
 						<label class="check"><input type="checkbox" name="Enabled"> <span data-i18n="set.enabled"></span></label>
 						<label class="form-item"><span class="form-item__label" data-i18n="set.language"></span>
-							<select class="form-item__input" name="Language"><option value="tr">Türkçe</option><option value="en">English</option></select>
+							<select class="form-item__input input--medium" name="Language"><option value="tr">Türkçe</option><option value="en">English</option></select>
 							<span class="form-item__description" data-i18n="set.languageHelp"></span>
 						</label>
 					</div>
@@ -103,7 +140,7 @@
 							<label class="form-item"><span class="form-item__label" data-i18n="set.to"></span><input class="form-item__input" type="time" name="to" required></label>
 						</div>
 						<p class="form-item__description" data-i18n="set.hoursHelp"></p>
-						<label class="form-item"><span class="form-item__label" data-i18n="set.timeZone"></span><input class="form-item__input" type="text" name="TimeZone" placeholder="Europe/Istanbul" autocomplete="off">
+						<label class="form-item"><span class="form-item__label" data-i18n="set.timeZone"></span><input class="form-item__input input--medium" type="text" name="TimeZone" placeholder="Europe/Istanbul" autocomplete="off">
 							<span class="form-item__description" data-i18n="set.timeZoneHelp"></span>
 						</label>
 						<div class="grid">
@@ -156,7 +193,7 @@
 			<!-- History -->
 			<section id="tab-history" class="tab" hidden>
 				<div class="box">
-					<h3 class="box__title" data-i18n="tab.history"></h3>
+					<h3 class="box__title" data-i18n="nav.history"></h3>
 					<div id="history"></div>
 				</div>
 			</section>
@@ -166,6 +203,12 @@
 				<div class="box prose" id="help"></div>
 			</section>
 		</main>
+
+		<footer class="footer">
+			<a href="/"><i data-icon="back"></i> ArchiSteamFarm</a>
+			<a href="https://github.com/Karrp0/SteadyAchievements" target="_blank" rel="noopener"><i data-icon="code"></i> GitHub</a>
+			<span class="footer__version" id="version"></span>
+		</footer>
 	</div>
 
 	<dialog id="detail" class="modal">
@@ -186,6 +229,7 @@
 		</div>
 	</dialog>
 
+	<script src="icons.js"></script>
 	<script src="i18n.js"></script>
 	<script src="app.js"></script>
 </body>

@@ -2,12 +2,15 @@
 
 (() => {
 	const API = "/Api/Steady";
+	const ASF_API = "/Api";
 	const REFRESH_MS = 30000;
+	const MOBILE = window.matchMedia("(max-width: 760px)");
 
-	// Our own keys, plus ASF-ui's keys (same origin) so the panel shares ASF's password, theme and language
-	const KEYS = { lang: "steady.lang", bot: "steady.bot", tab: "steady.tab" };
-	const ASF_KEYS = { password: "asf-ui:ipc-password", theme: "asf-ui:layout:theme", dark: "asf-ui:layout:dark-mode", locale: "asf-ui:locale" };
-	const THEMES = ["blue", "red", "teal", "purple", "green", "orange"];
+	// Our own keys, plus ASF-ui's keys (same origin): ASF's panel and this one share password, theme, language and menu state
+	const KEYS = { bot: "steady.bot" };
+	const ASF_KEYS = { password: "asf-ui:ipc-password", theme: "asf-ui:layout:theme", dark: "asf-ui:layout:dark-mode", locale: "asf-ui:locale", small: "asf-ui:layout:small-navigation" };
+	const THEMES = [["blue", "#367fa9"], ["red", "#a92616"], ["teal", "#359392"], ["purple", "#504d8e"], ["green", "#00a65a"], ["orange", "#d58d18"]];
+	const PAGES = ["overview", "games", "history", "settings", "help"];
 
 	const $ = (sel, root = document) => root.querySelector(sel);
 	const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -16,21 +19,24 @@
 		get(key) { try { return localStorage.getItem(key); } catch { return null; } },
 		set(key, value) { try { value == null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch { /* private mode */ } },
 		// ASF-ui stores JSON values
-		getJson(key) { const raw = store.get(key); if (raw == null) return null; try { return JSON.parse(raw); } catch { return raw; } }
+		getJson(key) { const raw = store.get(key); if (raw == null) return null; try { return JSON.parse(raw); } catch { return raw; } },
+		setJson(key, value) { store.set(key, value == null ? null : JSON.stringify(value)); }
 	};
 
-	function initialLanguage() {
-		const own = store.get(KEYS.lang);
-		if (own === "tr" || own === "en") return own;
-		const asf = String(store.getJson(ASF_KEYS.locale) || navigator.language || "en").toLowerCase();
-		return asf.startsWith("tr") ? "tr" : "en";
+	function pickLocale(wanted) {
+		const codes = LANGUAGES.map(([code]) => code);
+		if (!wanted) return null;
+		if (codes.includes(wanted)) return wanted;
+		const prefix = String(wanted).slice(0, 2).toLowerCase();
+		return codes.find(code => code.slice(0, 2).toLowerCase() === prefix) || null;
 	}
 
 	const state = {
-		lang: initialLanguage(),
+		locale: pickLocale(store.getJson(ASF_KEYS.locale)) || pickLocale(navigator.language) || "en-US",
 		password: String(store.getJson(ASF_KEYS.password) || ""),
 		bot: store.get(KEYS.bot) || "",
-		tab: store.get(KEYS.tab) || "status",
+		page: PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview",
+		look: { theme: store.getJson(ASF_KEYS.theme) || "blue", darkMode: store.getJson(ASF_KEYS.dark) === true },
 		status: null,
 		settings: null,
 		timer: 0
@@ -39,7 +45,7 @@
 	// ------------------------------------------------------------ helpers
 
 	function t(key, ...args) {
-		const text = (I18N[state.lang] && I18N[state.lang][key]) ?? I18N.tr[key] ?? key;
+		const text = (I18N[state.locale] && I18N[state.locale][key]) ?? I18N["en-US"][key] ?? key;
 		return args.length ? text.replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? "")) : text;
 	}
 
@@ -61,9 +67,10 @@
 
 	function duration(minutes) {
 		minutes = Math.max(0, Math.round(minutes));
+		const number = v => new Intl.NumberFormat(state.locale, { maximumFractionDigits: 1 }).format(v);
 		if (minutes < 60) return t("time.min", minutes);
-		if (minutes < 60 * 48) return t("time.hour", Math.round(minutes / 6) / 10);
-		return t("time.day", Math.round(minutes / 144) / 10);
+		if (minutes < 60 * 48) return t("time.hour", number(minutes / 60));
+		return t("time.day", number(minutes / 1440));
 	}
 
 	function relative(iso) {
@@ -75,13 +82,12 @@
 
 	function dateTime(iso) {
 		if (!iso) return "—";
-		return new Intl.DateTimeFormat(state.lang === "tr" ? "tr-TR" : "en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+		return new Intl.DateTimeFormat(state.locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
 	}
 
 	function percent(value) {
 		if (value == null) return "";
-		const number = value < 1 ? value.toFixed(2) : value.toFixed(1);
-		return state.lang === "tr" ? `%${number.replace(".", ",")}` : `${number}%`;
+		return new Intl.NumberFormat(state.locale, { style: "percent", maximumFractionDigits: value < 1 ? 2 : 1 }).format(value / 100);
 	}
 
 	// Steam image with fallbacks; at the end a neutral placeholder takes its place
@@ -106,28 +112,19 @@
 		el.className = isError ? "text-error" : "muted";
 	}
 
-	// ------------------------------------------------------------ theme (from ASF-ui)
-
-	function applyTheme() {
-		const app = document.documentElement;
-		const theme = String(store.getJson(ASF_KEYS.theme) || "blue").toLowerCase();
-		THEMES.forEach(name => app.classList.toggle(`theme-${name}`, name === (THEMES.includes(theme) ? theme : "blue")));
-		app.classList.toggle("app--dark-mode", store.getJson(ASF_KEYS.dark) === true);
-	}
-
 	// ------------------------------------------------------------ API
 
 	class ApiError extends Error {
 		constructor(status, text) { super(text); this.status = status; }
 	}
 
-	async function api(path, options = {}) {
+	async function request(url, options = {}) {
 		let response;
 		try {
-			response = await fetch(`${API}/${path}`, {
+			response = await fetch(url, {
 				method: options.method || "GET",
-				headers: { "Authentication": state.password, ...(options.body ? { "Content-Type": "application/json" } : {}) },
-				body: options.body ? JSON.stringify(options.body) : undefined,
+				headers: { "Authentication": state.password, ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}) },
+				body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
 				cache: "no-store"
 			});
 		} catch {
@@ -135,7 +132,7 @@
 		}
 
 		if (response.status === 401 || response.status === 403) {
-			showLogin(response.status === 403 ? t("login.banned") : (state.password ? t("login.wrong") : ""));
+			if (!options.quiet) showLogin(response.status === 403 ? t("login.banned") : (state.password ? t("login.wrong") : ""));
 			throw new ApiError(response.status, "auth");
 		}
 
@@ -149,36 +146,105 @@
 		return json ? json.Result : null;
 	}
 
-	// ------------------------------------------------------------ layout
+	const api = (path, options) => request(`${API}/${path}`, options);
+
+	// ------------------------------------------------------------ appearance (shared with ASF-ui)
+
+	function applyLook() {
+		const root = document.documentElement;
+		const theme = THEMES.some(([name]) => name === state.look.theme) ? state.look.theme : "blue";
+		THEMES.forEach(([name]) => root.classList.toggle(`theme-${name}`, name === theme));
+		root.classList.toggle("app--dark-mode", Boolean(state.look.darkMode));
+		$$(".swatch").forEach(s => s.classList.toggle("active", s.dataset.theme === theme));
+		$("#dark-toggle").checked = Boolean(state.look.darkMode);
+	}
+
+	// ASF-ui keeps theme and dark mode in ASF's storage API (and in localStorage); read both so both panels match
+	async function loadLook() {
+		try {
+			const saved = await request(`${ASF_API}/Storage/asfui-settings`, { quiet: true });
+			if (saved && typeof saved === "object") {
+				state.look = { ...state.look, ...saved };
+				applyLook();
+			}
+		} catch { /* not signed in yet, or no saved settings */ }
+	}
+
+	async function saveLook(change) {
+		state.look = { ...state.look, ...change };
+		store.setJson(ASF_KEYS.theme, state.look.theme);
+		store.setJson(ASF_KEYS.dark, Boolean(state.look.darkMode));
+		applyLook();
+		try {
+			await request(`${ASF_API}/Storage/asfui-settings`, { method: "POST", body: state.look, quiet: true });
+		} catch { /* localStorage still keeps it for this browser */ }
+	}
+
+	// ------------------------------------------------------------ navigation
+
+	function setSmallNavigation(small) {
+		document.documentElement.classList.toggle("nav--small", small);
+		store.setJson(ASF_KEYS.small, small);
+	}
+
+	function toggleMenu() {
+		if (MOBILE.matches) {
+			document.documentElement.classList.toggle("nav--open");
+		} else {
+			setSmallNavigation(!document.documentElement.classList.contains("nav--small"));
+		}
+	}
+
+	function closeDropdowns(except) {
+		for (const [button, panel] of [["#lang-toggle", "#lang-menu"], ["#look-toggle", "#look-menu"]]) {
+			if (button === except) continue;
+			$(panel).hidden = true;
+			$(button).setAttribute("aria-expanded", "false");
+		}
+	}
+
+	function toggleDropdown(button, panel) {
+		const open = $(panel).hidden;
+		closeDropdowns(button);
+		$(panel).hidden = !open;
+		$(button).setAttribute("aria-expanded", String(open));
+	}
+
+	function setLocale(code) {
+		state.locale = code;
+		// Same key and format as ASF-ui, so ASF's panel follows on its next load
+		store.setJson(ASF_KEYS.locale, code);
+		applyLanguage();
+		closeDropdowns();
+	}
 
 	function applyLanguage() {
-		document.documentElement.lang = state.lang;
+		document.documentElement.lang = state.locale.slice(0, 2);
 		$$("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+		$$("[data-title]").forEach(el => { el.title = t(el.dataset.title); el.setAttribute("aria-label", t(el.dataset.title)); });
 		$("#help").innerHTML = t("help.html");
-		$("#lang").textContent = state.lang === "tr" ? "EN" : "TR";
-		$("#lang").title = state.lang === "tr" ? "English" : "Türkçe";
-		$("#login-password").placeholder = "IPC password";
+		$$("#lang-menu button").forEach(b => b.classList.toggle("active", b.dataset.locale === state.locale));
 		if (state.status) renderStatus();
-		if (state.tab === "history") renderHistory();
 	}
 
 	function showLogin(text) {
 		$("#login").hidden = false;
 		$$(".tab").forEach(s => { s.hidden = true; });
+		$("#side-stats").hidden = true;
 		const error = $("#login-error");
 		error.hidden = !text;
 		error.textContent = text || "";
 		$("#login-password").focus();
 	}
 
-	function selectTab(tab) {
-		state.tab = tab;
-		store.set(KEYS.tab, tab);
-		$$(".side-menu button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-		$$(".tab").forEach(s => { s.hidden = s.id !== `tab-${tab}`; });
+	function showPage(page) {
+		state.page = PAGES.includes(page) ? page : "overview";
+		$$(".side-menu__item[data-tab]").forEach(a => a.classList.toggle("active", a.dataset.tab === state.page));
+		$$(".tab").forEach(s => { s.hidden = s.id !== `tab-${state.page}`; });
+		document.documentElement.classList.remove("nav--open");
 
-		if (tab === "settings") loadSettings();
-		if (tab === "status" || tab === "history") refreshStatus();
+		if (state.page === "settings") loadSettings();
+		else refreshStatus();
 	}
 
 	// ------------------------------------------------------------ status
@@ -188,13 +254,12 @@
 		try {
 			state.status = await api(encodeURIComponent(state.bot));
 			renderStatus();
-			if (state.tab === "history") renderHistory();
 		} catch (e) {
 			if (e.status !== 401 && e.status !== 403) console.warn(e);
 		}
 	}
 
-	function fact(id, text, cls = "") {
+	function setText(id, text, cls = "") {
 		const el = $(id);
 		el.textContent = text;
 		el.className = cls;
@@ -204,18 +269,40 @@
 		const s = state.status;
 		if (!s) return;
 
+		const all = [...s.Games, ...s.Completed];
+		const sum = key => all.reduce((total, g) => total + (g[key] || 0), 0);
+		const nextEta = s.Games.filter(g => g.InSlot && g.NextEtaUtc).map(g => g.NextEtaUtc).sort()[0];
+
+		// Side menu statistics (like ASF's bot counters)
+		$("#side-stats").hidden = false;
+		$("#s-unlocked").textContent = s.Simulation ? sum("Simulated") : sum("Done");
+		$("#s-unlocked-label").textContent = s.Simulation ? t("stat.simulated") : t("stat.unlocked");
+		$("#s-progress").textContent = s.Games.length;
+		$("#s-completed").textContent = s.Completed.filter(g => g.Planned > 0).length;
+		$("#s-skipped").textContent = sum("Skipped");
+		$("#s-today").textContent = `${s.UnlocksToday} / ${s.MaxPerDay}`;
+		$("#s-next").textContent = nextEta ? relative(nextEta) : "—";
+		$("#s-mode").textContent = s.Simulation ? t("stat.sim") : t("stat.real");
+		$("#version").textContent = `SteadyAchievements ${s.PluginVersion}`;
+
+		// Overview
 		$("#trimmed").hidden = !s.TrimmedRuntime;
-		fact("#f-mode", s.Simulation ? t("fact.sim") : t("fact.real"), s.Simulation ? "" : "text-error");
-		fact("#f-enabled", s.Enabled ? t("fact.on") : t("fact.off"), s.Enabled ? "text-ok" : "text-error");
-		fact("#f-hours", `${s.ActiveHours} · ${s.InWindow ? t("fact.inWindow") : t("fact.outWindow")} (${s.LocalTime.slice(11)})`);
-		fact("#f-today", t("fact.today", s.UnlocksToday, s.MaxPerDay));
-		fact("#f-auto", !s.AutoPlay ? t("fact.off") : s.AutoPlaying.length ? t("fact.autoActive") : t("fact.autoWaiting"));
+		$("#i-today").textContent = `${s.UnlocksToday} / ${s.MaxPerDay}`;
+		$("#i-games").textContent = s.Games.length;
+		$("#i-next").textContent = nextEta ? relative(nextEta) : "—";
+
+		setText("#f-mode", s.Simulation ? t("fact.sim") : t("fact.real"), s.Simulation ? "" : "text-error");
+		setText("#f-enabled", s.Enabled ? t("fact.on") : t("fact.off"), s.Enabled ? "text-ok" : "text-error");
+		setText("#f-hours", `${s.ActiveHours} · ${s.InWindow ? t("fact.inWindow") : t("fact.outWindow")} (${s.LocalTime.slice(11)})`);
+		setText("#f-today", t("fact.today", s.UnlocksToday, s.MaxPerDay));
+		setText("#f-auto", !s.AutoPlay ? t("fact.off") : s.AutoPlaying.length ? t("fact.autoActive") : t("fact.autoWaiting"));
 
 		const playing = $("#playing");
 		playing.replaceChildren();
 		if (!s.Playing.length) playing.append(h("p", { class: "empty" }, t("status.noPlaying")));
 		for (const p of s.Playing) {
-			const [cls, text] = !p.Eligible ? ["text-error", p.Status]
+			const reason = p.Reason && I18N["en-US"][`why.${p.Reason}`] ? t(`why.${p.Reason}`, new Intl.NumberFormat(state.locale).format(p.ReasonValue)) : p.Status;
+			const [cls, text] = !p.Eligible ? ["text-error", reason]
 				: p.Finished ? ["muted", t("play.finished")]
 				: p.InSlot ? ["text-ok", t("play.slot")]
 				: ["muted", t("play.waiting")];
@@ -226,6 +313,7 @@
 			));
 		}
 
+		// Games
 		const games = $("#games");
 		games.replaceChildren();
 		if (!s.Games.length) games.append(h("p", { class: "empty" }, t("status.noGames")));
@@ -247,6 +335,8 @@
 				h("div", { class: "row__actions" }, h("button", { type: "button", class: "button button--small", onclick: () => openDetail(g.AppId, g.Name) }, t("game.view")))
 			));
 		}
+
+		renderHistory();
 	}
 
 	function gameRow(g, simulation) {
@@ -322,8 +412,6 @@
 			)
 		)));
 	}
-
-	// ------------------------------------------------------------ history
 
 	function renderHistory() {
 		const list = $("#history");
@@ -449,40 +537,60 @@
 		}
 
 		$("#login").hidden = true;
+		loadLook();
+
 		const select = $("#bot");
 		select.replaceChildren(...bots.map(name => h("option", { value: name }, name)));
 		select.hidden = bots.length < 2;
 		if (!bots.includes(state.bot)) state.bot = bots[0] || "";
 		select.value = state.bot;
 
-		selectTab(state.tab);
+		showPage(state.page);
 		clearInterval(state.timer);
 		state.timer = setInterval(() => {
-			if (!document.hidden && (state.tab === "status" || state.tab === "history")) refreshStatus();
+			if (!document.hidden && state.page !== "settings") refreshStatus();
 		}, REFRESH_MS);
 	}
 
+	function build() {
+		$("#lang-menu").replaceChildren(...LANGUAGES.map(([code, name]) => h("button", { type: "button", "data-locale": code, onclick: () => setLocale(code) }, name)));
+		$("#swatches").replaceChildren(...THEMES.map(([name, color]) => h("button", { type: "button", class: "swatch", "data-theme": name, title: name, style: `background:${color}`, onclick: () => saveLook({ theme: name }) })));
+		renderIcons();
+	}
+
 	function wire() {
-		$("#lang").addEventListener("click", () => {
-			state.lang = state.lang === "tr" ? "en" : "tr";
-			store.set(KEYS.lang, state.lang);
-			applyLanguage();
+		$("#menu-toggle").addEventListener("click", toggleMenu);
+		$("#lang-toggle").addEventListener("click", e => { e.stopPropagation(); toggleDropdown("#lang-toggle", "#lang-menu"); });
+		$("#look-toggle").addEventListener("click", e => { e.stopPropagation(); toggleDropdown("#look-toggle", "#look-menu"); });
+		$("#look-menu").addEventListener("click", e => e.stopPropagation());
+		$("#dark-toggle").addEventListener("change", e => saveLook({ darkMode: e.target.checked }));
+		document.addEventListener("click", () => closeDropdowns());
+		$(".main-container").addEventListener("click", () => document.documentElement.classList.remove("nav--open"));
+
+		$("#logout").addEventListener("click", () => {
+			state.password = "";
+			store.set(ASF_KEYS.password, null);
+			clearInterval(state.timer);
+			showLogin("");
 		});
 
-		$$(".side-menu button").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.tab)));
+		window.addEventListener("hashchange", () => {
+			const page = location.hash.slice(1);
+			if (PAGES.includes(page)) showPage(page);
+		});
 
 		$("#bot").addEventListener("change", e => {
 			state.bot = e.target.value;
 			store.set(KEYS.bot, state.bot);
 			state.status = null;
-			selectTab(state.tab);
+			showPage(state.page);
 		});
 
 		$("#login-form").addEventListener("submit", e => {
 			e.preventDefault();
 			state.password = $("#login-password").value;
 			// Same key and format as ASF-ui, so signing in here also signs in there (and the other way round)
-			store.set(ASF_KEYS.password, JSON.stringify(state.password));
+			store.setJson(ASF_KEYS.password, state.password);
 			start();
 		});
 
@@ -490,11 +598,18 @@
 		$("#test-discord").addEventListener("click", testDiscord);
 		$("#detail-close").addEventListener("click", () => $("#detail").close());
 		$("#detail").addEventListener("click", e => { if (e.target.id === "detail") e.target.close(); });
-		document.addEventListener("visibilitychange", () => { if (!document.hidden && state.tab === "status") refreshStatus(); });
-		window.addEventListener("storage", e => { if (e.key && e.key.startsWith("asf-ui:layout")) applyTheme(); });
+		document.addEventListener("visibilitychange", () => { if (!document.hidden && state.page !== "settings") refreshStatus(); });
+		window.addEventListener("storage", e => {
+			if (e.key === ASF_KEYS.theme || e.key === ASF_KEYS.dark) {
+				state.look = { ...state.look, theme: store.getJson(ASF_KEYS.theme) || state.look.theme, darkMode: store.getJson(ASF_KEYS.dark) === true };
+				applyLook();
+			}
+		});
 	}
 
-	applyTheme();
+	if (store.getJson(ASF_KEYS.small) === true) document.documentElement.classList.add("nav--small");
+	build();
+	applyLook();
 	wire();
 	applyLanguage();
 	start();

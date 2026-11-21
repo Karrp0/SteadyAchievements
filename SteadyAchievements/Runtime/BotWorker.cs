@@ -154,7 +154,7 @@ internal sealed class BotWorker : IDisposable {
 
 			foreach (uint appId in playing) {
 				AppFacts? appFacts = facts.GetValueOrDefault(appId);
-				(bool ok, string reason) = await Check(appId, appFacts, false).ConfigureAwait(false);
+				(bool ok, string reason, string code, double value) = await Check(appId, appFacts, false).ConfigureAwait(false);
 
 				if (ok) {
 					eligible.Add(appId);
@@ -162,7 +162,7 @@ internal sealed class BotWorker : IDisposable {
 					Bot.ArchiLogger.LogGenericInfo(LogPrefix + Texts.Format(Lang, "log.excluded", NameOf(appId), appId, reason));
 				}
 
-				snapshot.Add(new PlayingDto { AppId = appId, Name = NameOf(appId), Eligible = ok, Status = reason });
+				snapshot.Add(new PlayingDto { AppId = appId, Name = NameOf(appId), Eligible = ok, Status = reason, Reason = code, ReasonValue = value });
 			}
 
 			TickInput input = new(eligible, CoolingUntil.Keys.ToHashSet(), inWindow, now, UnlocksToday(local));
@@ -175,6 +175,8 @@ internal sealed class BotWorker : IDisposable {
 					Name = p.Name,
 					Eligible = p.Eligible,
 					Status = p.Status,
+					Reason = p.Reason,
+					ReasonValue = p.ReasonValue,
 					InSlot = output.Slots.Contains(p.AppId),
 					Finished = p.Eligible && State.Plans.TryGetValue(p.AppId, out GamePlan? plan) && plan.IsCompleted,
 					Capsule = CapsuleUrl(p.AppId)
@@ -222,7 +224,7 @@ internal sealed class BotWorker : IDisposable {
 
 	// ---------------------------------------------------------------- checks
 
-	private async Task<(bool Ok, string Reason)> Check(uint appId, AppFacts? facts, bool ignorePlaytime) {
+	private async Task<(bool Ok, string Reason, string Code, double Value)> Check(uint appId, AppFacts? facts, bool ignorePlaytime) {
 		IReadOnlySet<uint> asfBlacklist = (IReadOnlySet<uint>?) ASF.GlobalConfig?.Blacklist ?? new HashSet<uint>();
 		Verdict verdict = Eligibility.Evaluate(appId, facts, Settings, asfBlacklist, []);
 
@@ -233,18 +235,18 @@ internal sealed class BotWorker : IDisposable {
 		}
 
 		if (verdict != Verdict.Ok) {
-			return (false, Texts.Verdict(Lang, verdict));
+			return (false, Texts.Verdict(Lang, verdict), verdict.ToString(), 0);
 		}
 
 		if (!ignorePlaytime && (Settings.MinPlaytimeHours > 0) && !State.Plans.ContainsKey(appId)) {
 			long minutes = Owned.TryGetValue(appId, out OwnedGame? game) ? game.PlaytimeMinutes : 0;
 
 			if (minutes < Settings.MinPlaytimeHours * 60) {
-				return (false, Texts.Format(Lang, "verdict.Playtime", Settings.MinPlaytimeHours));
+				return (false, Texts.Format(Lang, "verdict.Playtime", Settings.MinPlaytimeHours), "Playtime", Settings.MinPlaytimeHours);
 			}
 		}
 
-		return (true, Texts.Verdict(Lang, Verdict.Ok));
+		return (true, Texts.Verdict(Lang, Verdict.Ok), nameof(Verdict.Ok), 0);
 	}
 
 	private HashSet<uint> GetOwnedApps() {
@@ -796,6 +798,7 @@ internal sealed class BotWorker : IDisposable {
 			UnlocksToday = UnlocksToday(Clock.ToLocal(now, Settings.TimeZone)),
 			MaxPerDay = Settings.MaxPerDay,
 			TrimmedRuntime = SteadyAchievementsPlugin.TrimmedRuntime,
+			PluginVersion = typeof(SteadyAchievementsPlugin).Assembly.GetName().Version?.ToString(3) ?? "",
 			Games = State.Plans.Values.Where(static p => !p.IsCompleted).OrderByDescending(p => slots.Contains(p.AppId)).ThenBy(static p => p.CreatedUtc).Select(ToDto).ToList(),
 			Completed = State.Plans.Values.Where(static p => p.IsCompleted).OrderByDescending(static p => p.CompletedUtc).Select(ToDto).ToList(),
 			Playing = [.. PlayingSnapshot],

@@ -25,7 +25,7 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
   - each game's achievement list;
   - settings and history.
 
-  The panel is available in Turkish and English. It matches ASF's own web UI and uses your ASF theme, dark mode and password.
+  The panel looks like ASF's own web UI and shares its theme colour, dark mode, language and password. It is available in 9 languages: Turkish, English, German, Spanish, French, Polish, Portuguese (BR), Russian and Simplified Chinese.
 - **Discord:** it can notify you when a game is finished, on every achievement if you like, with a daily summary, and when something goes wrong.
 - **Privacy:** it connects to no server other than Steam. The only exception is your own webhook, if you turn Discord on.
 

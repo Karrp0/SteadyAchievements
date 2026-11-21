@@ -19,6 +19,7 @@ public sealed class StatusDto {
 	public int UnlocksToday { get; init; }
 	public int MaxPerDay { get; init; }
 	public bool TrimmedRuntime { get; init; }
+	public string PluginVersion { get; init; } = "";
 	public IReadOnlyList<GameDto> Games { get; init; } = [];
 	public IReadOnlyList<GameDto> Completed { get; init; } = [];
 	public IReadOnlyList<PlayingDto> Playing { get; init; } = [];
@@ -61,6 +62,11 @@ public sealed class PlayingDto {
 	public bool Finished { get; init; }
 
 	public string Status { get; init; } = "";
+
+	// Machine-readable reason (a Verdict name or "Playtime") so the panel can translate it
+	public string Reason { get; init; } = "";
+	public double ReasonValue { get; init; }
+
 	public string Capsule { get; init; } = "";
 }
 
