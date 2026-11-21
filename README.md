@@ -1,59 +1,65 @@
 # SteadyAchievements
 
-**Türkçe** · [English](README.en.md)
+**English** · [Türkçe](README.tr.md)
 
-[ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (ASF) için bir eklenti. ASF'nin oynadığı oyunlarda Steam başarımlarını **yavaş, doğal görünen bir tempoyla** açar. Ayrıca ASF'nin görünümünde 40 dilli bir web paneli, Discord bildirimleri, saat kasmak için kütüphaneden oyun seçme ve isteğe bağlı otomatik oyun özelliği var.
+A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (ASF) that unlocks Steam achievements **slowly and at a natural-looking pace** in the games ASF is playing. It also has a web panel in ASF's own style with 40 languages, Discord notifications, a library game picker for hour boosting and optional auto play.
 
 > [!WARNING]
-> Başarımları oynamadan açmak **Steam kurallarına aykırıdır**. Eklentiyi kullanmak tamamen senin sorumluluğundadır. Eklenti **simülasyon modunda** başlar ve sen gerçek moda geçene kadar Steam'e hiçbir şey göndermez.
+> Unlocking achievements without playing is **against Steam's rules**. Using this plugin is entirely your own responsibility. The plugin starts in **simulation mode** and sends nothing to Steam until you switch to real mode.
 
-## Ekran görüntüleri
+## Screenshots
 
-<p align="center"><img src="docs/images/overview.png" alt="Genel bakış (koyu tema)"><br><sub><b>Genel bakış (koyu tema)</b></sub></p>
+<p align="center"><img src="docs/images/overview.png" alt="Overview (dark theme)"><br><sub><b>Overview (dark theme)</b></sub></p>
 
 <table>
-<tr><td align="center" width="50%"><img src="docs/images/games.png" alt="Oyunlar"><br><sub><b>Oyunlar</b></sub></td><td align="center" width="50%"><img src="docs/images/achievements.png" alt="Bir oyunun başarımları ve planı"><br><sub><b>Bir oyunun başarımları ve planı</b></sub></td></tr>
-<tr><td align="center" width="50%"><img src="docs/images/settings.png" alt="Ayarlar (açık tema)"><br><sub><b>Ayarlar (açık tema)</b></sub></td><td align="center" width="50%"><img src="docs/images/hour-boosting-list.png" alt="Saat kasma"><br><sub><b>Saat kasma</b></sub></td></tr>
-<tr><td align="center" width="50%"><img src="docs/images/hour-boosting.png" alt="Saat kasma: kütüphaneden oyun seçme"><br><sub><b>Saat kasma: kütüphaneden oyun seçme</b></sub></td><td align="center" width="50%"><img src="docs/images/languages.png" alt="40 dil"><br><sub><b>40 dil</b></sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/images/games.png" alt="Games"><br><sub><b>Games</b></sub></td><td align="center" width="50%"><img src="docs/images/achievements.png" alt="A game's achievements and plan"><br><sub><b>A game's achievements and plan</b></sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/images/settings.png" alt="Settings (light theme)"><br><sub><b>Settings (light theme)</b></sub></td><td align="center" width="50%"><img src="docs/images/hour-boosting-list.png" alt="Hour boosting"><br><sub><b>Hour boosting</b></sub></td></tr>
+<tr><td align="center" width="50%"><img src="docs/images/hour-boosting.png" alt="Hour boosting: picking games from the library"><br><sub><b>Hour boosting: picking games from the library</b></sub></td><td align="center" width="50%"><img src="docs/images/languages.png" alt="40 languages"><br><sub><b>40 languages</b></sub></td></tr>
 </table>
 
 <p align="center">
-<img src="docs/images/mobile.png" alt="Telefonda: ana ekran ve menü" width="260">&nbsp;&nbsp;&nbsp;<img src="docs/images/mobile-menu.png" alt="Telefonda menü" width="260"><br>
-<sub><b>Telefonda: ana ekran ve menü</b></sub>
+<img src="docs/images/mobile.png" alt="On a phone: home screen and menu" width="260">&nbsp;&nbsp;&nbsp;<img src="docs/images/mobile-menu.png" alt="Menu on a phone" width="260"><br>
+<sub><b>On a phone: home screen and menu</b></sub>
 </p>
 
-## Ne yapar?
+## What it does
 
-- **Doğal tempo:** Her oyunun kalan başarımları seçtiğin gün aralığına (varsayılan 30–50 gün) rastgele yayılır. Oyuncuların çoğunun açtığı başarımlar genelde önce, nadir olanlar sonra gelir. Nadir bir başarımdan önceki bekleme daha uzundur.
-- **Sadece oynanırken:** Plan sadece oyun gerçekten oynanırken (kart düşürme, `GamesPlayedWhileIdle` ya da otomatik oyun) ve senin belirlediğin **aktif saatlerde** ilerler.
-- **Kademeli başarımlar:** "30 maç", "100 maç" gibi kademeler her zaman küçükten büyüğe açılır.
-- **Sınırlar:** İki başarım arasında her zaman bir en az süre bırakılır, günlük bir sınır da var. İstersen oyunda belli bir oynama süresi dolmadan hiç başlamaz, çok nadir başarımları da atlayabilir.
-- **Güvenlik filtreleri:**
-  - VAC'lı oyunlar atlanır. İzin listesi bunu aşamaz.
-  - Çevrimiçi / çok oyunculu oyunlar atlanır.
-  - **Sahip olmadığın, başarım içeren DLC'si** olan oyunlar atlanır.
-  - Geliştirici / yayıncı engeli, kara liste ve izin listesi var. ASF'nin kendi kara listesine de uyar.
-  - Sadece oyun sunucusunun açabildiği (korumalı) başarımlara hiç dokunulmaz.
-- **Otomatik oyun (isteğe bağlı):** ASF'nin düşüreceği kart kalmadığında kütüphanendeki uygun oyunları kendisi seçip oynatır. Senin oyun listen de oynanmaya devam eder. Belirli aralıklarla kontrolü ASF'ye bırakır ki yeni kartlar kaçmasın.
-- **Web paneli** (`/steady/`): oynanan oyunlar ve neden atlandıkları, ilerleyen ve biten oyunlar, sıradaki başarım ve tahmini tarihi, her oyunun başarım listesi, ayarlar ve geçmiş. ASF panelinin görünümünde; tema rengi, karanlık mod, dil ve şifre ASF ile ortak. ASF'nin 40 dilinin hepsi var: Türkçe, İngilizce, Almanca, İspanyolca, Fransızca, Lehçe, Portekizce ve Rusça ile Basitleştirilmiş Çince eksiksiz; diğerlerinde ana ekranlar çevrili, uzun açıklamalar İngilizce.
-- **Saat kasma sayfası:** ASF'nin oyun listesi (`GamesPlayedWhileIdle`) AppID yazmadan, kütüphanende oyun adıyla aranıp seçilerek düzenlenir. Kara liste ve izin listesi için de aynı seçici var.
-- **Discord:** oyun bitince, istersen her başarımda, günlük özet olarak ve sorun çıkınca haber verir.
-- **Gizlilik:** Eklenti sunucuda Steam dışında hiçbir yere bağlanmaz; tek istisna, Discord'u açarsan senin webhook adresin. Panel sayfası tarayıcında, ASF'nin kendi paneli gibi yazı tipini Google Fonts'tan, oyun ve başarım resimlerini Steam'in resim sunucusundan yükler.
+- **Natural pace:** each game's remaining achievements are spread randomly over your day range (30–50 days by default). Achievements most players have tend to come first, rare ones last. The wait before a rare achievement is longer.
+- **Only while played:** a plan only moves while the game is really being played (card farming, `GamesPlayedWhileIdle` or auto play) and inside your **active hours**.
+- **Tiered achievements:** tiers such as "30 matches" and "100 matches" always unlock from the smallest to the largest.
+- **Limits:** there is always a minimum gap between achievements, plus a daily cap. Optionally it waits for a minimum playtime before starting a game, and it can skip very rare achievements.
+- **Safety filters:**
+  - VAC games are skipped. The allowlist cannot override this.
+  - Online / multiplayer games are skipped.
+  - Games with **achievement DLC you don't own** are skipped.
+  - Developer / publisher blocks, a blacklist and an allowlist are available. ASF's own blacklist is respected too.
+  - Achievements only the game's servers may set (protected) are never touched.
+- **Auto play (optional):** when ASF has no cards left to farm, it picks eligible games from your library and plays them. Your idle list keeps playing too. It hands control back to ASF every few hours so new cards are not missed.
+- **Web panel** (`/steady/`):
+  - games being played, and why any are skipped;
+  - games in progress and completed games, with the next achievement and its estimated date;
+  - each game's achievement list;
+  - settings and history.
 
-## Gereksinimler
+  The panel looks like ASF's own web UI and shares its theme colour, dark mode, language and password. It offers all 40 of ASF's languages: Turkish, English, German, Spanish, French, Polish, Portuguese (BR), Russian and Simplified Chinese are complete; the others translate the main screens and fall back to English for longer help texts.
+- **Hour boosting page:** edit ASF's idle list (`GamesPlayedWhileIdle`) by searching your library by name instead of typing AppIDs. The blacklist and allowlist use the same picker.
+- **Discord:** it can notify you when a game is finished, on every achievement if you like, with a daily summary, and when something goes wrong.
+- **Privacy:** on the server the plugin connects to nothing but Steam; the only exception is your own webhook, if you turn Discord on. The panel page, like ASF's own panel, loads its font from Google Fonts and game and achievement images from Steam's image servers in your browser.
 
-- ASF **6.3.x** (6.3.11.7 ile test edildi).
-- ASF'nin **bütün sürümlerinde** çalışır: `generic`, `linux-x64`, `win-x64` vb. İşletim sistemine özel sürümler "kırpılmıştır" (trimmed), yani .NET'in ASF'nin kullanmadığı parçaları çıkarılmıştır. Eklenti bu sürümlere karşı test edilir (bkz. [tools/TrimCheck](tools/TrimCheck)). Tek fark şu: kırpılmış sürümlerde saat dilimi veritabanı yoktur, bu yüzden `TimeZone` ayarı kullanılamaz ve sunucunun saati geçerli olur.
+## Requirements
 
-## Kurulum
+- ASF **6.3.x** (tested with 6.3.11.7).
+- Works on **every ASF build**: `generic`, `linux-x64`, `win-x64` and the others. The OS-specific builds are trimmed: the .NET parts ASF itself does not use are removed. The plugin is tested against them (see [tools/TrimCheck](tools/TrimCheck)). The only difference is that trimmed builds have no time zone database, so the `TimeZone` setting is unavailable and the server time is used.
 
-1. **İndir.** [Releases](../../releases) sayfasından en son sürümün `SteadyAchievements.zip` dosyasını indir.
-   İstersen dosyanın bozulmadığını `SHA512SUMS` ile doğrula:
+## Installation
+
+1. **Download.** Get `SteadyAchievements.zip` of the latest version from [Releases](../../releases).
+   Optionally check that the file is intact with `SHA512SUMS`:
    - Linux / macOS: `sha512sum -c SHA512SUMS --ignore-missing`
-   - Windows (PowerShell): `(Get-FileHash SteadyAchievements.zip -Algorithm SHA512).Hash` çıktısını `SHA512SUMS` içindeki değerle karşılaştır.
-2. **Çıkar.** Zip'in içindeki `SteadyAchievements` klasörünü ASF'nin `plugins` klasörüne çıkar. `plugins` klasörü, ASF programının (`ArchiSteamFarm.exe` / `ArchiSteamFarm`) yanındadır. Sonuç şöyle görünmeli:
+   - Windows (PowerShell): compare the output of `(Get-FileHash SteadyAchievements.zip -Algorithm SHA512).Hash` with the value in `SHA512SUMS`.
+2. **Extract.** Extract the `SteadyAchievements` folder from the zip into ASF's `plugins` folder, which sits next to the ASF program (`ArchiSteamFarm.exe` / `ArchiSteamFarm`). The result should look like this:
    ```
-   ASF klasörü/
+   ASF folder/
    ├── config/
    ├── plugins/
    │   └── SteadyAchievements/
@@ -62,85 +68,85 @@
    │       └── www/
    └── ArchiSteamFarm(.exe)
    ```
-3. **ASF'yi yeniden başlat.** Kayıtta (konsol ya da `log.txt`) `SteadyAchievements ... loaded` satırı görünmeli. ASF, eklentiyi her botta otomatik olarak çalıştırır.
-4. **Paneli aç.** Panel ASF'nin web arayüzü (IPC) üzerinden çalışır. IPC varsayılan olarak açıktır.
-   - ASF aynı bilgisayardaysa: `http://127.0.0.1:1242/steady/`
-   - ASF'yi kendi alan adınla yayınladıysan: `https://<asf-adresin>/steady/`
+3. **Restart ASF.** The log (console or `log.txt`) should show `SteadyAchievements ... loaded`. ASF runs the plugin for every bot automatically.
+4. **Open the panel.** The panel runs on ASF's web interface (IPC), which is on by default.
+   - ASF on the same computer: `http://127.0.0.1:1242/steady/`
+   - ASF published on your own domain: `https://<your-asf>/steady/`
 
-   Sondaki `/` gerekli. ASF'de `IPCPassword` belirlediysen şifre sorulur; ASF'nin kendi paneline girdiysen aynı şifre otomatik kullanılır. İnternete açık bir ASF'de mutlaka bir `IPCPassword` belirle.
+   The trailing `/` is required. If you set an `IPCPassword` in ASF, the panel asks for it; if you are signed in to ASF's own panel, that password is used automatically. Always set an `IPCPassword` on an ASF reachable from the internet.
 
-### Güncelleme
+### Updating
 
-`plugins/SteadyAchievements` klasörünün içeriğini yeni sürümün dosyalarıyla değiştir ve ASF'yi yeniden başlat. Ayarlar, planlar ve geçmiş `config/SteadyAchievements/` klasöründe durur; güncellemede silinmez.
+Replace the contents of `plugins/SteadyAchievements` with the new version's files and restart ASF. Settings, plans and history live in `config/SteadyAchievements/` and are kept.
 
-### Kaldırma
+### Uninstalling
 
-ASF'yi durdur, `plugins/SteadyAchievements` klasörünü sil. Ayarları ve geçmişi de silmek istersen `config/SteadyAchievements` klasörünü de sil.
+Stop ASF and delete `plugins/SteadyAchievements`. To remove the settings and history as well, delete `config/SteadyAchievements` too.
 
-## İlk kullanım
+## First steps
 
-1. Sol menüden **Eklenti Ayarları** sayfasını aç; aktif saatleri ve tempoyu belirle.
-2. Birkaç gün **simülasyonda** bırak. Kayıtta `[Steady] [Simülasyon] Açılacaktı: ...` satırlarını, panelde de planları göreceksin.
-3. Memnunsan **Gerçek** modunu seçip kaydet. Simülasyonda yapılan ilerleme silinir ve planlar hesabının gerçek durumundan yeniden kurulur.
-4. İstersen **Saat Kasma** sayfasından ASF'nin saat kastığı oyunları kütüphanenden seç.
+1. Open **Plugin Settings** from the side menu and choose your active hours and pace.
+2. Leave it in **simulation** for a few days. You will see `[Steady] [Simulation] Would unlock ...` lines in the log and the plans in the panel.
+3. When you are happy with it, choose **Real** and save. Simulated progress is discarded and plans are rebuilt from your account's real state.
+4. Optionally pick the games ASF idles for hours from your library on the **Hour Boosting** page.
 
-## Ayarlar
+## Settings
 
-Ayarlar her bot için ayrı tutulur: `config/SteadyAchievements/<bot>.settings.json`. Panelden değiştirmen yeterli, yeniden başlatma gerekmez.
+Settings are kept per bot in `config/SteadyAchievements/<bot>.settings.json`. Change them from the panel; no restart is needed.
 
-| Ayar | Varsayılan | Açıklama |
+| Setting | Default | Description |
 |---|---|---|
-| `Enabled` | `true` | Eklenti bu bot için açık mı. |
-| `Simulation` | `true` | Simülasyonda Steam'e hiçbir şey gönderilmez. |
-| `Language` | `tr` | Discord, komut yanıtları ve kayıt dili (`tr` / `en`). |
-| `MinDays` / `MaxDays` | `30` / `50` | Bir oyunun başarımlarının yayılacağı gün aralığı. |
-| `ActiveHours` | `10:00-01:00` | Başarımların açılabileceği saatler. Gece yarısını geçebilir; başlangıç ve bitiş aynıysa bütün gün. |
-| `TimeZone` | sunucu saati | IANA adı, ör. `Europe/Istanbul`. Sadece generic sürümde; kırpılmış sürümlerde sunucu saati kullanılır. |
-| `MaxActiveGames` | `2` | Aynı anda ilerleyen oyun sayısı. |
-| `MinGapMinutes` | `20` | İki başarım arasındaki en kısa süre (dakika, bot genelinde). |
-| `MaxPerDay` | `8` | Günde en fazla başarım. |
-| `MinPlaytimeHours` | `1` | Steam'deki oynama süresi bu kadar saate ulaşmadan oyuna başlanmaz. |
-| `SkipRarerThan` | `0` | Oyuncuların % kaçından azının açtığı başarımlar hiç açılmasın (0 = kapalı). |
-| `ExcludeVac` | `true` | VAC'lı oyunları atla. |
-| `ExcludeOnline` | `true` | Çevrimiçi / çok oyunculu oyunları atla. |
-| `ProtectDlc` | `true` | Sahip olmadığın başarımlı DLC'si olan oyunları atla. |
-| `RespectAsfBlacklist` | `true` | ASF'nin `Blacklist` ayarındaki oyunları da atla. |
-| `Blacklist` / `Allowlist` | `[]` | AppID listeleri. İzin listesi çevrimiçi, DLC ve geliştirici kontrollerini aşar; VAC'ı aşamaz. |
-| `BlockedDevelopers` / `BlockedPublishers` | `[]` | Bu geliştiricilerin / yayıncıların oyunlarına dokunma. |
-| `AutoPlay` | `false` | ASF boştayken uygun oyunları kendisi seçip oynatır. |
-| `AutoPlayRotateHours` | `4` | Otomatik oyunda ASF'nin kart kontrolü için kaç saatte bir ara verileceği. |
-| `DiscordWebhook` | boş | Discord webhook adresi. |
-| `NotifyCompleted` / `NotifyEachUnlock` / `NotifyDailySummary` / `NotifyProblems` | `true` / `false` / `true` / `true` | Hangi durumlarda bildirim gönderilecek. |
-| `DailySummaryHour` | `23` | Günlük özetin gönderileceği saat. |
+| `Enabled` | `true` | Whether the plugin is on for this bot. |
+| `Simulation` | `true` | In simulation nothing is sent to Steam. |
+| `Language` | `tr` | Language for Discord, command replies and log lines (`tr` / `en`). |
+| `MinDays` / `MaxDays` | `30` / `50` | Range of days a game's achievements are spread over. |
+| `ActiveHours` | `10:00-01:00` | Hours in which achievements may unlock. The window may cross midnight; equal start and end means all day. |
+| `TimeZone` | server time | IANA id, e.g. `Europe/Istanbul`. Generic build only; trimmed builds use the server time. |
+| `MaxActiveGames` | `2` | How many games progress at the same time. |
+| `MinGapMinutes` | `20` | Shortest gap between two achievements, in minutes, across the whole bot. |
+| `MaxPerDay` | `8` | Maximum achievements per day. |
+| `MinPlaytimeHours` | `1` | A game is not started before its Steam playtime reaches this many hours. |
+| `SkipRarerThan` | `0` | Never unlock achievements that fewer than this % of players have (0 = off). |
+| `ExcludeVac` | `true` | Skip VAC games. |
+| `ExcludeOnline` | `true` | Skip online / multiplayer games. |
+| `ProtectDlc` | `true` | Skip games with achievement DLC you don't own. |
+| `RespectAsfBlacklist` | `true` | Also skip the games in ASF's own `Blacklist`. |
+| `Blacklist` / `Allowlist` | `[]` | AppID lists. The allowlist bypasses the online, DLC and developer checks, but never the VAC check. |
+| `BlockedDevelopers` / `BlockedPublishers` | `[]` | Never touch games by these developers / publishers. |
+| `AutoPlay` | `false` | Pick and play eligible games while ASF is idle. |
+| `AutoPlayRotateHours` | `4` | During auto play, how often (in hours) ASF gets a break to check for cards. |
+| `DiscordWebhook` | empty | Discord webhook URL. |
+| `NotifyCompleted` / `NotifyEachUnlock` / `NotifyDailySummary` / `NotifyProblems` | `true` / `false` / `true` / `true` | Which events send a notification. |
+| `DailySummaryHour` | `23` | Hour of the daily summary. |
 
-## Komutlar
+## Commands
 
-ASF komut satırında ya da Steam sohbetinde `steady` (kısaca `sa`) ve ardından:
+In ASF's console or Steam chat, type `steady` (or `sa`) followed by:
 
-| Komut | Ne yapar |
+| Command | What it does |
 |---|---|
-| `status` | Durum ve ilerleyen oyunlar. |
-| `on` / `off` | Eklentiyi aç / kapat. |
-| `sim` / `real` | Simülasyon / gerçek mod. |
-| `auto on` / `auto off` | Otomatik oyunu aç / kapat. |
-| `plan <appid>` | Bir oyunun planını gösterir. |
-| `replan <appid>` | Bir oyunun planını siler; oyun oynanırken yeniden kurulur. |
+| `status` | Shows the status and the games in progress. |
+| `on` / `off` | Turns the plugin on / off. |
+| `sim` / `real` | Switches to simulation / real mode. |
+| `auto on` / `auto off` | Turns auto play on / off. |
+| `plan <appid>` | Shows a game's plan. |
+| `replan <appid>` | Deletes a game's plan; it is rebuilt while the game is played. |
 
-Sona bot adları eklenebilir, ör. `steady status ASF`. Komutlar ASF'de **Master** yetkisi ister.
+You can add bot names at the end, e.g. `steady status ASF`. The commands need **Master** access in ASF.
 
-## Nasıl çalışır?
+## How it works
 
-Zaman "aktif dakika" ile ölçülür: oyunun aktif saatlerde oynandığı her dakika.
+Time is measured in "active minutes": every minute in which the game is played inside the active hours.
 
-1. **Süre:** `MinDays` ile `MaxDays` arasında rastgele bir gün sayısı, günlük aktif dakikayla çarpılır. Sonra kalan başarımların oranıyla ölçeklenir; yarısı açılmış bir oyuna yaklaşık yarı süre ayrılır.
-2. **Sıra:** Her başarıma `1,35 · ln(yüzde) + Gumbel gürültüsü` değerinde bir anahtar verilir ve büyükten küçüğe sıralanır. Bu, yüzdesi yüksek olanları öne çeken ama sabit olmayan bir sıra verir.
-3. **Kademeler:** "30 maça gir" ile "100 maça gir" gibi kademeli başarımlar her zaman küçükten büyüğe açılır. Aynı sayaca bağlı olanlar sayacın hedefine göre, aynı cümlenin farklı sayılı halleri de içindeki sayıya göre sıralanır.
-4. **Aralıklar:** Bir başarımdan önceki bekleme `1 + ln(100 / yüzde)` ile orantılıdır ve log-normal gürültü eklenir. Aralıklar toplam süreyi dolduracak şekilde ölçeklenir ve hiçbiri `MinGapMinutes` değerinden kısa olmaz.
-5. **Her dakika:** Oynanan ve uygun olan oyunlar (en fazla `MaxActiveGames`) bir dakika ilerler. Vakti gelmiş en gecikmiş tek başarım açılır; en kısa aralık ve günlük sınır her zaman korunur.
+1. **Budget:** a random number of days between `MinDays` and `MaxDays`, times the active minutes per day. This is then scaled by the share of achievements still left, so a half-finished game gets about half the time.
+2. **Order:** each achievement gets the key `1.35 · ln(percent) + Gumbel noise`, and achievements are sorted from the largest key to the smallest. This favours common achievements without fixing the order.
+3. **Tiers:** tiered achievements such as "Play 30 matches" and "Play 100 matches" always unlock from the smallest to the largest. Achievements driven by the same stat are ordered by the stat's target; the same sentence with different numbers is ordered by its number.
+4. **Gaps:** the wait before an achievement is proportional to `1 + ln(100 / percent)`, with log-normal noise. The gaps are scaled to fill the budget, and none is shorter than `MinGapMinutes`.
+5. **Every minute:** the eligible games being played (up to `MaxActiveGames`) advance one minute. The single most overdue achievement unlocks, always respecting the minimum gap and the daily cap.
 
-Bir başarım açılmadan hemen önce Steam'deki güncel durum tekrar okunur. Başarım zaten açıksa (örneğin oyunda açmışsan) atlanır. Steam hata verirse oyun 30 dakika bekletilir; aynı başarım 3 kez başarısız olursa atlanır.
+Right before an unlock, the account's current state is read from Steam again. If the achievement is already unlocked (for example because you earned it in game), it is skipped. If Steam returns an error, the game waits 30 minutes; if the same achievement fails 3 times, it is skipped.
 
-## Derleme
+## Building
 
 ```sh
 git clone --recurse-submodules https://github.com/Karrp0/SteadyAchievements.git
@@ -149,10 +155,10 @@ dotnet test SteadyAchievements.Tests -c Release
 dotnet build SteadyAchievements -c Release
 ```
 
-Çıktı `SteadyAchievements/bin/Release/net10.0/` klasöründe: `SteadyAchievements.dll`, `SteadyAchievements.deps.json` ve `www/`. Her sürümün zip dosyası ve `SHA512SUMS` özeti [Releases](../../releases) sayfasında.
+The output goes to `SteadyAchievements/bin/Release/net10.0/` and contains `SteadyAchievements.dll`, `SteadyAchievements.deps.json` and `www/`. Each version's zip and its `SHA512SUMS` are on the [Releases](../../releases) page.
 
-Kırpılmış bir ASF sürümünde sorun olursa ASF'yi `STEADY_SELFTEST=1` ortam değişkeniyle başlat; kayıtta `[Steady self-test] done: N/N passed` satırı eklentinin bütün parçalarını dener. Ayrıntılar: [tools/TrimCheck](tools/TrimCheck).
+If something misbehaves on a trimmed ASF build, start ASF with the environment variable `STEADY_SELFTEST=1`; the log line `[Steady self-test] done: N/N passed` exercises every part of the plugin. Details: [tools/TrimCheck](tools/TrimCheck).
 
-## Lisans
+## License
 
-[Apache 2.0](LICENSE.txt). ASF de Apache 2.0 lisanslıdır.
+[Apache 2.0](LICENSE.txt). ASF is also licensed under Apache 2.0.
