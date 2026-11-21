@@ -2,10 +2,24 @@
 
 [Türkçe](README.md) · **English**
 
-A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (ASF) that unlocks Steam achievements **slowly and at a natural-looking pace** in the games ASF is playing. It also has a Turkish/English web panel, Discord notifications and optional auto play.
+A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (ASF) that unlocks Steam achievements **slowly and at a natural-looking pace** in the games ASF is playing. It also has a web panel in ASF's own style with 40 languages, Discord notifications, a library game picker for hour boosting and optional auto play.
 
 > [!WARNING]
 > Unlocking achievements without playing is **against Steam's rules**. Using this plugin is entirely your own responsibility. The plugin starts in **simulation mode** and sends nothing to Steam until you switch to real mode.
+
+## Screenshots
+
+![Overview (dark theme)](docs/images/overview.png)
+
+| Games | A game's achievements and plan |
+| --- | --- |
+| ![Games](docs/images/games.png) | ![A game's achievements and plan](docs/images/achievements.png) |
+| **Settings (light theme)** | **Hour boosting: picking games from the library** |
+| ![Settings (light theme)](docs/images/settings.png) | ![Hour boosting: picking games from the library](docs/images/hour-boosting.png) |
+
+| 40 languages | On a phone |
+| --- | --- |
+| <img src="docs/images/languages.png" alt="40 languages" width="420"> | <img src="docs/images/mobile.png" alt="On a phone" width="200"> <img src="docs/images/mobile-menu.png" alt="On a phone" width="200"> |
 
 ## What it does
 
@@ -112,7 +126,7 @@ dotnet test SteadyAchievements.Tests -c Release
 dotnet build SteadyAchievements -c Release
 ```
 
-The output goes to `SteadyAchievements/bin/Release/net10.0/` and contains `SteadyAchievements.dll`, `SteadyAchievements.deps.json` and `www/`. On every `v*` tag, GitHub Actions publishes the zip and a `SHA512SUMS` file automatically.
+The output goes to `SteadyAchievements/bin/Release/net10.0/` and contains `SteadyAchievements.dll`, `SteadyAchievements.deps.json` and `www/`. Each version's zip and its `SHA512SUMS` are on the [Releases](../../releases) page.
 
 ## License
 

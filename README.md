@@ -2,10 +2,24 @@
 
 **Türkçe** · [English](README.en.md)
 
-[ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (ASF) için bir eklenti. ASF'nin oynadığı oyunlarda Steam başarımlarını **yavaş, doğal görünen bir tempoyla** açar. Ayrıca Türkçe/İngilizce bir web paneli, Discord bildirimleri ve isteğe bağlı otomatik oyun seçme özelliği var.
+[ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (ASF) için bir eklenti. ASF'nin oynadığı oyunlarda Steam başarımlarını **yavaş, doğal görünen bir tempoyla** açar. Ayrıca ASF'nin görünümünde 40 dilli bir web paneli, Discord bildirimleri, saat kasmak için kütüphaneden oyun seçme ve isteğe bağlı otomatik oyun özelliği var.
 
 > [!WARNING]
 > Başarımları oynamadan açmak **Steam kurallarına aykırıdır**. Eklentiyi kullanmak tamamen senin sorumluluğundadır. Eklenti **simülasyon modunda** başlar ve sen gerçek moda geçene kadar Steam'e hiçbir şey göndermez.
+
+## Ekran görüntüleri
+
+![Genel bakış (koyu tema)](docs/images/overview.png)
+
+| Oyunlar | Bir oyunun başarımları ve planı |
+| --- | --- |
+| ![Oyunlar](docs/images/games.png) | ![Bir oyunun başarımları ve planı](docs/images/achievements.png) |
+| **Ayarlar (açık tema)** | **Saat kasma: kütüphaneden oyun seçme** |
+| ![Ayarlar (açık tema)](docs/images/settings.png) | ![Saat kasma: kütüphaneden oyun seçme](docs/images/hour-boosting.png) |
+
+| 40 dil | Telefonda |
+| --- | --- |
+| <img src="docs/images/languages.png" alt="40 dil" width="420"> | <img src="docs/images/mobile.png" alt="Telefonda" width="200"> <img src="docs/images/mobile-menu.png" alt="Telefonda" width="200"> |
 
 ## Ne yapar?
 
@@ -106,7 +120,7 @@ dotnet test SteadyAchievements.Tests -c Release
 dotnet build SteadyAchievements -c Release
 ```
 
-Çıktı `SteadyAchievements/bin/Release/net10.0/` klasöründe: `SteadyAchievements.dll`, `SteadyAchievements.deps.json` ve `www/`. GitHub Actions her `v*` etiketinde zip'i ve `SHA512SUMS` dosyasını otomatik yayımlar.
+Çıktı `SteadyAchievements/bin/Release/net10.0/` klasöründe: `SteadyAchievements.dll`, `SteadyAchievements.deps.json` ve `www/`. Her sürümün zip dosyası ve `SHA512SUMS` özeti [Releases](../../releases) sayfasında.
 
 ## Lisans
 
