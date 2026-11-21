@@ -26,6 +26,7 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
 
 - **Natural pace:** each game's remaining achievements are spread randomly over your day range (30–50 days by default). Achievements most players have tend to come first, rare ones last. The wait before a rare achievement is longer.
 - **Only while played:** a plan only moves while the game is really being played (card farming, `GamesPlayedWhileIdle` or auto play) and inside your **active hours**.
+- **Tiered achievements:** tiers such as "30 matches" and "100 matches" always unlock from the smallest to the largest.
 - **Limits:** there is always a minimum gap between achievements, plus a daily cap. Optionally it waits for a minimum playtime before starting a game, and it can skip very rare achievements.
 - **Safety filters:**
   - VAC games are skipped. The allowlist cannot override this.
@@ -41,8 +42,9 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
   - settings and history.
 
   The panel looks like ASF's own web UI and shares its theme colour, dark mode, language and password. It offers all 40 of ASF's languages: Turkish, English, German, Spanish, French, Polish, Portuguese (BR), Russian and Simplified Chinese are complete; the others translate the main screens and fall back to English for longer help texts.
+- **Hour boosting page:** edit ASF's idle list (`GamesPlayedWhileIdle`) by searching your library by name instead of typing AppIDs. The blacklist and allowlist use the same picker.
 - **Discord:** it can notify you when a game is finished, on every achievement if you like, with a daily summary, and when something goes wrong.
-- **Privacy:** it connects to no server other than Steam. The only exception is your own webhook, if you turn Discord on.
+- **Privacy:** on the server the plugin connects to nothing but Steam; the only exception is your own webhook, if you turn Discord on. The panel page, like ASF's own panel, loads its font from Google Fonts and game and achievement images from Steam's image servers in your browser.
 
 ## Requirements
 
@@ -128,6 +130,8 @@ dotnet build SteadyAchievements -c Release
 ```
 
 The output goes to `SteadyAchievements/bin/Release/net10.0/` and contains `SteadyAchievements.dll`, `SteadyAchievements.deps.json` and `www/`. Each version's zip and its `SHA512SUMS` are on the [Releases](../../releases) page.
+
+If something misbehaves on a trimmed ASF build, start ASF with the environment variable `STEADY_SELFTEST=1`; the log line `[Steady self-test] done: N/N passed` exercises every part of the plugin. Details: [tools/TrimCheck](tools/TrimCheck).
 
 ## License
 

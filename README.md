@@ -26,6 +26,7 @@
 
 - **Doğal tempo:** Her oyunun kalan başarımları seçtiğin gün aralığına (varsayılan 30–50 gün) rastgele yayılır. Oyuncuların çoğunun açtığı başarımlar genelde önce, nadir olanlar sonra gelir. Nadir bir başarımdan önceki bekleme daha uzundur.
 - **Sadece oynanırken:** Plan sadece oyun gerçekten oynanırken (kart düşürme, `GamesPlayedWhileIdle` ya da otomatik oyun) ve senin belirlediğin **aktif saatlerde** ilerler.
+- **Kademeli başarımlar:** "30 maç", "100 maç" gibi kademeler her zaman küçükten büyüğe açılır.
 - **Sınırlar:** İki başarım arasında her zaman bir en az süre bırakılır, günlük bir sınır da var. İstersen oyunda belli bir oynama süresi dolmadan hiç başlamaz, çok nadir başarımları da atlayabilir.
 - **Güvenlik filtreleri:**
   - VAC'lı oyunlar atlanır. İzin listesi bunu aşamaz.
@@ -35,8 +36,9 @@
   - Sadece oyun sunucusunun açabildiği (korumalı) başarımlara hiç dokunulmaz.
 - **Otomatik oyun (isteğe bağlı):** ASF'nin düşüreceği kart kalmadığında kütüphanendeki uygun oyunları kendisi seçip oynatır. Senin oyun listen de oynanmaya devam eder. Belirli aralıklarla kontrolü ASF'ye bırakır ki yeni kartlar kaçmasın.
 - **Web paneli** (`/steady/`): oynanan oyunlar ve neden atlandıkları, ilerleyen ve biten oyunlar, sıradaki başarım ve tahmini tarihi, her oyunun başarım listesi, ayarlar ve geçmiş. ASF panelinin görünümünde; tema rengi, karanlık mod, dil ve şifre ASF ile ortak. ASF'nin 40 dilinin hepsi var: Türkçe, İngilizce, Almanca, İspanyolca, Fransızca, Lehçe, Portekizce ve Rusça ile Basitleştirilmiş Çince eksiksiz; diğerlerinde ana ekranlar çevrili, uzun açıklamalar İngilizce.
+- **Saat kasma sayfası:** ASF'nin oyun listesi (`GamesPlayedWhileIdle`) AppID yazmadan, kütüphanende oyun adıyla aranıp seçilerek düzenlenir. Kara liste ve izin listesi için de aynı seçici var.
 - **Discord:** oyun bitince, istersen her başarımda, günlük özet olarak ve sorun çıkınca haber verir.
-- **Gizlilik:** Steam dışında hiçbir sunucuya bağlanmaz. Tek istisna, Discord'u kendin açarsan senin webhook adresin.
+- **Gizlilik:** Eklenti sunucuda Steam dışında hiçbir yere bağlanmaz; tek istisna, Discord'u açarsan senin webhook adresin. Panel sayfası tarayıcında, ASF'nin kendi paneli gibi yazı tipini Google Fonts'tan, oyun ve başarım resimlerini Steam'in resim sunucusundan yükler.
 
 ## Gereksinimler
 
@@ -122,6 +124,8 @@ dotnet build SteadyAchievements -c Release
 ```
 
 Çıktı `SteadyAchievements/bin/Release/net10.0/` klasöründe: `SteadyAchievements.dll`, `SteadyAchievements.deps.json` ve `www/`. Her sürümün zip dosyası ve `SHA512SUMS` özeti [Releases](../../releases) sayfasında.
+
+Kırpılmış bir ASF sürümünde sorun olursa ASF'yi `STEADY_SELFTEST=1` ortam değişkeniyle başlat; kayıtta `[Steady self-test] done: N/N passed` satırı eklentinin bütün parçalarını dener. Ayrıntılar: [tools/TrimCheck](tools/TrimCheck).
 
 ## Lisans
 
