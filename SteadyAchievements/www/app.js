@@ -2,22 +2,35 @@
 
 (() => {
 	const API = "/Api/Steady";
-	const STORE = { password: "steady.ipc", lang: "steady.lang", bot: "steady.bot", tab: "steady.tab" };
 	const REFRESH_MS = 30000;
+
+	// Our own keys, plus ASF-ui's keys (same origin) so the panel shares ASF's password, theme and language
+	const KEYS = { lang: "steady.lang", bot: "steady.bot", tab: "steady.tab" };
+	const ASF_KEYS = { password: "asf-ui:ipc-password", theme: "asf-ui:layout:theme", dark: "asf-ui:layout:dark-mode", locale: "asf-ui:locale" };
+	const THEMES = ["blue", "red", "teal", "purple", "green", "orange"];
 
 	const $ = (sel, root = document) => root.querySelector(sel);
 	const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 	const store = {
 		get(key) { try { return localStorage.getItem(key); } catch { return null; } },
-		set(key, value) { try { value == null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch { /* private mode */ } }
+		set(key, value) { try { value == null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch { /* private mode */ } },
+		// ASF-ui stores JSON values
+		getJson(key) { const raw = store.get(key); if (raw == null) return null; try { return JSON.parse(raw); } catch { return raw; } }
 	};
 
+	function initialLanguage() {
+		const own = store.get(KEYS.lang);
+		if (own === "tr" || own === "en") return own;
+		const asf = String(store.getJson(ASF_KEYS.locale) || navigator.language || "en").toLowerCase();
+		return asf.startsWith("tr") ? "tr" : "en";
+	}
+
 	const state = {
-		lang: store.get(STORE.lang) || ((navigator.language || "tr").toLowerCase().startsWith("tr") ? "tr" : "en"),
-		password: store.get(STORE.password) || "",
-		bot: store.get(STORE.bot) || "",
-		tab: store.get(STORE.tab) || "status",
+		lang: initialLanguage(),
+		password: String(store.getJson(ASF_KEYS.password) || ""),
+		bot: store.get(KEYS.bot) || "",
+		tab: store.get(KEYS.tab) || "status",
 		status: null,
 		settings: null,
 		timer: 0
@@ -30,7 +43,7 @@
 		return args.length ? text.replace(/\{(\d+)\}/g, (_, i) => String(args[Number(i)] ?? "")) : text;
 	}
 
-	// Small element builder; strings become text nodes, so Steam-provided names are never parsed as HTML
+	// Element builder; strings become text nodes, so names coming from Steam are never parsed as HTML
 	function h(tag, attrs = {}, ...children) {
 		const el = document.createElement(tag);
 		for (const [key, value] of Object.entries(attrs || {})) {
@@ -71,8 +84,7 @@
 		return state.lang === "tr" ? `%${number.replace(".", ",")}` : `${number}%`;
 	}
 
-	// Steam image with fallbacks: each failing URL tries the next one, and at the end a neutral placeholder
-	// takes its place (some newer games and achievements simply have no image at the old addresses).
+	// Steam image with fallbacks; at the end a neutral placeholder takes its place
 	function steamImage(className, urls, label = "") {
 		const sources = urls.filter(Boolean);
 		const placeholder = () => h("span", { class: `${className} placeholder`, "aria-hidden": "true" }, (label || "").trim().slice(0, 1).toUpperCase());
@@ -87,25 +99,26 @@
 		return img;
 	}
 
-	const LEGACY_CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps";
+	const capsule = (appId, url, name) => steamImage("thumb", [url, `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/capsule_231x87.jpg`], name);
 
-	function capsule(appId, url, name) {
-		return steamImage("thumb", [url, `${LEGACY_CDN}/${appId}/capsule_231x87.jpg`], name);
-	}
-
-	function cover(appId, url, name) {
-		return steamImage("cover", [url, `${LEGACY_CDN}/${appId}/header.jpg`], name);
-	}
-
-	function toast(el, text, isError = false) {
+	function message(el, text, isError = false) {
 		el.textContent = text;
-		el.classList.toggle("error", isError);
+		el.className = isError ? "text-error" : "muted";
+	}
+
+	// ------------------------------------------------------------ theme (from ASF-ui)
+
+	function applyTheme() {
+		const app = document.documentElement;
+		const theme = String(store.getJson(ASF_KEYS.theme) || "blue").toLowerCase();
+		THEMES.forEach(name => app.classList.toggle(`theme-${name}`, name === (THEMES.includes(theme) ? theme : "blue")));
+		app.classList.toggle("app--dark-mode", store.getJson(ASF_KEYS.dark) === true);
 	}
 
 	// ------------------------------------------------------------ API
 
 	class ApiError extends Error {
-		constructor(status, message) { super(message); this.status = status; }
+		constructor(status, text) { super(text); this.status = status; }
 	}
 
 	async function api(path, options = {}) {
@@ -141,36 +154,30 @@
 	function applyLanguage() {
 		document.documentElement.lang = state.lang;
 		$$("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
-		$("#tab-help").innerHTML = t("help.html");
-		$$(".lang button").forEach(b => b.classList.toggle("active", b.dataset.lang === state.lang));
-		$("#login-password").placeholder = "IPCPassword";
+		$("#help").innerHTML = t("help.html");
+		$("#lang").textContent = state.lang === "tr" ? "EN" : "TR";
+		$("#lang").title = state.lang === "tr" ? "English" : "Türkçe";
+		$("#login-password").placeholder = "IPC password";
 		if (state.status) renderStatus();
-		if (state.tab === "history" && state.status) renderHistory();
+		if (state.tab === "history") renderHistory();
 	}
 
-	function showLogin(message) {
+	function showLogin(text) {
 		$("#login").hidden = false;
 		$$(".tab").forEach(s => { s.hidden = true; });
-		$(".tabs").hidden = true;
 		const error = $("#login-error");
-		error.hidden = !message;
-		error.textContent = message || "";
+		error.hidden = !text;
+		error.textContent = text || "";
 		$("#login-password").focus();
-	}
-
-	function hideLogin() {
-		$("#login").hidden = true;
-		$(".tabs").hidden = false;
 	}
 
 	function selectTab(tab) {
 		state.tab = tab;
-		store.set(STORE.tab, tab);
-		$$(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+		store.set(KEYS.tab, tab);
+		$$(".side-menu button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
 		$$(".tab").forEach(s => { s.hidden = s.id !== `tab-${tab}`; });
 
 		if (tab === "settings") loadSettings();
-		if (tab === "history") renderHistory();
 		if (tab === "status" || tab === "history") refreshStatus();
 	}
 
@@ -187,10 +194,10 @@
 		}
 	}
 
-	function badge(el, text, kind) {
+	function fact(id, text, cls = "") {
+		const el = $(id);
 		el.textContent = text;
-		el.className = `badge ${kind || ""}`;
-		el.hidden = !text;
+		el.className = cls;
 	}
 
 	function renderStatus() {
@@ -198,83 +205,73 @@
 		if (!s) return;
 
 		$("#trimmed").hidden = !s.TrimmedRuntime;
-		badge($("#mode-badge"), s.Simulation ? t("badge.sim") : t("badge.real"), s.Simulation ? "sim" : "real");
-		badge($("#enabled-badge"), s.Enabled ? t("badge.on") : t("badge.off"), s.Enabled ? "ok" : "off");
-		badge($("#window-badge"), s.InWindow ? t("badge.inWindow") : t("badge.outWindow"), s.InWindow ? "ok" : "off");
-		badge($("#auto-badge"), s.AutoPlay ? (s.AutoPlaying.length ? t("badge.autoActive") : t("badge.auto")) : "", "info");
-		$("#today").textContent = `${s.UnlocksToday} / ${s.MaxPerDay}`;
-		$("#hours").textContent = s.ActiveHours;
-		$("#local-time").textContent = s.LocalTime.slice(11);
+		fact("#f-mode", s.Simulation ? t("fact.sim") : t("fact.real"), s.Simulation ? "" : "text-error");
+		fact("#f-enabled", s.Enabled ? t("fact.on") : t("fact.off"), s.Enabled ? "text-ok" : "text-error");
+		fact("#f-hours", `${s.ActiveHours} · ${s.InWindow ? t("fact.inWindow") : t("fact.outWindow")} (${s.LocalTime.slice(11)})`);
+		fact("#f-today", t("fact.today", s.UnlocksToday, s.MaxPerDay));
+		fact("#f-auto", !s.AutoPlay ? t("fact.off") : s.AutoPlaying.length ? t("fact.autoActive") : t("fact.autoWaiting"));
 
 		const playing = $("#playing");
 		playing.replaceChildren();
-		if (!s.Playing.length) {
-			playing.append(h("p", { class: "empty" }, t("status.noPlaying")));
-		}
+		if (!s.Playing.length) playing.append(h("p", { class: "empty" }, t("status.noPlaying")));
 		for (const p of s.Playing) {
-			const [chipClass, chipText] = !p.Eligible ? ["off", p.Status]
-				: p.Finished ? ["", t("play.finished")]
-				: p.InSlot ? ["ok", t("play.slot")]
-				: ["", t("play.waiting")];
-			playing.append(h("div", { class: `row-item ${p.Eligible && !p.Finished ? "" : "dim"}` },
+			const [cls, text] = !p.Eligible ? ["text-error", p.Status]
+				: p.Finished ? ["muted", t("play.finished")]
+				: p.InSlot ? ["text-ok", t("play.slot")]
+				: ["muted", t("play.waiting")];
+			playing.append(h("div", { class: `row ${p.Eligible && !p.Finished ? "" : "row--dim"}` },
 				capsule(p.AppId, p.Capsule, p.Name),
-				h("div", { class: "grow" }, h("strong", {}, p.Name), h("div", { class: "muted small" }, `AppID ${p.AppId}`)),
-				h("span", { class: `chip ${chipClass}` }, chipText)
+				h("div", { class: "row__main" }, h("div", { class: "row__name" }, p.Name), h("div", { class: "muted small" }, `AppID ${p.AppId}`)),
+				h("div", { class: `row__side ${cls}` }, text)
 			));
 		}
 
 		const games = $("#games");
 		games.replaceChildren();
-		if (!s.Games.length) {
-			games.append(h("p", { class: "empty" }, t("status.noGames")));
-		}
-		for (const g of s.Games) games.append(gameCard(g, s.Simulation));
+		if (!s.Games.length) games.append(h("p", { class: "empty" }, t("status.noGames")));
+		for (const g of s.Games) games.append(gameRow(g, s.Simulation));
 
 		const completed = $("#completed");
 		completed.replaceChildren();
 		$("#completed-count").textContent = s.Completed.length ? `(${s.Completed.length})` : "";
 		if (!s.Completed.length) completed.append(h("p", { class: "empty" }, t("status.noCompleted")));
 		for (const g of s.Completed) {
-			const progressed = g.Done + g.Simulated;
-			completed.append(h("div", { class: "row-item" },
+			completed.append(h("div", { class: "row" },
 				capsule(g.AppId, g.Capsule, g.Name),
-				h("div", { class: "grow" },
-					h("strong", {}, g.Name),
+				h("div", { class: "row__main" },
+					h("div", { class: "row__name" }, g.Name),
 					h("div", { class: "muted small" }, g.Planned === 0
 						? `${t("game.nothing")} · ${g.Protected} ${t("game.protected")} · ${g.UnlockedBefore} ${t("game.before")}`
-						: `${t("game.completedAt")} ${dateTime(g.CompletedUtc)} · ${progressed}/${g.Planned}`)
+						: `${t("game.completedAt")} ${dateTime(g.CompletedUtc)} · ${g.Done + g.Simulated}/${g.Planned}`)
 				),
-				h("button", { type: "button", class: "link", onclick: () => openDetail(g.AppId, g.Name) }, t("game.view"))
+				h("div", { class: "row__actions" }, h("button", { type: "button", class: "button button--small", onclick: () => openDetail(g.AppId, g.Name) }, t("game.view")))
 			));
 		}
 	}
 
-	function gameCard(g, simulation) {
+	function gameRow(g, simulation) {
 		const progressed = g.Done + g.Simulated + g.Skipped;
 		const pct = g.Planned ? Math.round((progressed / g.Planned) * 100) : 100;
-		const timePct = g.BudgetMinutes ? Math.min(100, Math.round((g.ActiveMinutes / g.BudgetMinutes) * 100)) : 0;
 
-		const meta = [];
-		if (g.Protected) meta.push(`${g.Protected} ${t("game.protected")}`);
-		if (g.UnlockedBefore) meta.push(`${g.UnlockedBefore} ${t("game.before")}`);
-		if (g.SkippedRare) meta.push(`${g.SkippedRare} ${t("game.rare")}`);
+		const details = [`${progressed}/${g.Planned}${simulation && g.Simulated ? ` (${t("game.simulated")})` : ""}`, `${duration(g.ActiveMinutes)} / ${duration(g.BudgetMinutes)}`];
+		if (g.Protected) details.push(`${g.Protected} ${t("game.protected")}`);
+		if (g.UnlockedBefore) details.push(`${g.UnlockedBefore} ${t("game.before")}`);
+		if (g.SkippedRare) details.push(`${g.SkippedRare} ${t("game.rare")}`);
 
-		return h("article", { class: `game card ${g.InSlot ? "" : "paused"}` },
-			cover(g.AppId, g.Header, g.Name),
-			h("div", { class: "game-body" },
-				h("div", { class: "game-title" }, h("strong", {}, g.Name), !g.InSlot ? h("span", { class: "chip off" }, t("game.paused")) : null),
-				h("div", { class: "progress", title: `${progressed}/${g.Planned}` }, h("span", { style: `width:${pct}%` })),
-				h("div", { class: "muted small" }, `${progressed} / ${g.Planned}${simulation && g.Simulated ? ` (${g.Simulated} ${t("game.simulated")})` : ""} · ${duration(g.ActiveMinutes)} / ${duration(g.BudgetMinutes)} (${timePct}%)`),
-				meta.length ? h("div", { class: "muted small" }, meta.join(" · ")) : null,
-				g.NextName ? h("div", { class: "next" },
-					h("span", { class: "label" }, t("game.next")),
-					h("strong", {}, g.NextName), " ", h("span", { class: "muted" }, percent(g.NextPercent)),
-					h("div", { class: "muted small" }, `${t("game.eta")}: ${g.InSlot ? relative(g.NextEtaUtc) : "—"} · ${t("game.end")}: ${g.InSlot ? dateTime(g.EndEtaUtc) : "—"}`)
-				) : null,
-				h("div", { class: "actions" },
-					h("button", { type: "button", onclick: () => openDetail(g.AppId, g.Name) }, t("game.view")),
-					h("button", { type: "button", class: "link", onclick: () => replan(g.AppId) }, t("game.replan"))
-				)
+		return h("div", { class: `row ${g.InSlot ? "" : "row--dim"}` },
+			capsule(g.AppId, g.Capsule, g.Name),
+			h("div", { class: "row__main" },
+				h("div", { class: "row__name" }, g.Name, !g.InSlot ? h("span", { class: "muted small" }, ` · ${t("game.paused")}`) : null),
+				h("div", { class: "progress", title: `${pct}%` }, h("span", { style: `width:${pct}%` })),
+				h("div", { class: "muted small" }, details.join(" · ")),
+				g.NextName ? h("div", { class: "small" },
+					`${t("game.next")}: `, h("strong", {}, g.NextName), ` ${percent(g.NextPercent)}`,
+					h("span", { class: "muted" }, g.InSlot ? ` · ${relative(g.NextEtaUtc)} · ${t("game.end")} ${dateTime(g.EndEtaUtc)}` : "")
+				) : null
+			),
+			h("div", { class: "row__actions" },
+				h("button", { type: "button", class: "button button--small", onclick: () => openDetail(g.AppId, g.Name) }, t("game.view")),
+				h("button", { type: "button", class: "button button--small", onclick: () => replan(g.AppId) }, t("game.replan"))
 			)
 		);
 	}
@@ -295,28 +292,29 @@
 		const body = $("#detail-body");
 		const tools = $("#detail-tools");
 		body.replaceChildren(h("p", { class: "muted" }, t("ach.loading")));
-		tools.replaceChildren();
+		tools.textContent = "";
 		dialog.showModal();
 
 		let detail;
 		try {
 			detail = await api(`${encodeURIComponent(state.bot)}/Games/${appId}`);
 		} catch (e) {
-			body.replaceChildren(h("p", { class: "error" }, e.status === 401 ? "" : t("ach.failed")));
+			body.replaceChildren(h("p", { class: "text-error" }, e.status === 401 ? "" : t("ach.failed")));
 			return;
 		}
 
 		const counts = {};
 		for (const a of detail.Achievements) counts[a.State] = (counts[a.State] || 0) + 1;
-		tools.replaceChildren(...Object.entries(counts).map(([key, n]) => h("span", { class: `chip st-${key}` }, `${t(`ach.${key}`)}: ${n}`)));
+		tools.textContent = Object.entries(counts).map(([key, n]) => `${t(`ach.${key}`)}: ${n}`).join(" · ");
 
-		body.replaceChildren(...detail.Achievements.map(a => h("div", { class: `ach st-${a.State}` },
+		const stateClass = { done: "text-ok", unlocked: "text-ok", simulated: "muted", planned: "text-theme" };
+		body.replaceChildren(...detail.Achievements.map(a => h("div", { class: `ach ${["protected", "rare", "skipped", "none"].includes(a.State) ? "ach--off" : ""}` },
 			steamImage("icon", [a.Icon], "?"),
-			h("div", { class: "grow" },
+			h("div", { class: "row__main" },
 				h("div", {}, h("strong", {}, a.Name), a.Hidden ? h("span", { class: "muted small" }, ` · ${t("ach.hidden")}`) : null),
 				a.Description ? h("div", { class: "muted small" }, a.Description) : null,
 				h("div", { class: "small" },
-					h("span", { class: "state" }, t(`ach.${a.State}`)),
+					h("span", { class: stateClass[a.State] || "muted" }, t(`ach.${a.State}`)),
 					a.Percent != null ? ` · ${percent(a.Percent)}` : "",
 					a.FinishedUtc ? ` · ${dateTime(a.FinishedUtc)}` : "",
 					a.EtaUtc ? ` · ${relative(a.EtaUtc)}` : ""
@@ -335,14 +333,14 @@
 			list.append(h("p", { class: "empty" }, t("hist.empty")));
 			return;
 		}
+		const kindClass = { Unlocked: "text-ok", Completed: "text-theme", Failed: "text-error", Skipped: "text-warn", Simulated: "muted" };
 		for (const item of items) {
-			list.append(h("div", { class: "row-item" },
-				h("span", { class: `chip k-${item.Kind}` }, t(`hist.${item.Kind}`)),
-				h("div", { class: "grow" },
-					h("strong", {}, item.Achievement || item.Game),
-					h("div", { class: "muted small" }, item.Achievement ? `${item.Game}${item.Percent ? ` · ${percent(item.Percent)}` : ""}` : "")
+			list.append(h("div", { class: "row" },
+				h("div", { class: "row__main" },
+					h("div", {}, h("span", { class: kindClass[item.Kind] || "" }, t(`hist.${item.Kind}`)), " · ", h("strong", {}, item.Achievement || item.Game)),
+					item.Achievement ? h("div", { class: "muted small" }, `${item.Game}${item.Percent ? ` · ${percent(item.Percent)}` : ""}`) : null
 				),
-				h("span", { class: "muted small", title: dateTime(item.Utc) }, relative(item.Utc))
+				h("div", { class: "row__side muted", title: dateTime(item.Utc) }, relative(item.Utc))
 			));
 		}
 	}
@@ -358,7 +356,7 @@
 			state.settings = await api(`${encodeURIComponent(state.bot)}/Settings`);
 			fillSettings(state.settings);
 		} catch (e) {
-			if (e.status !== 401) toast($("#save-msg"), e.message, true);
+			if (e.status !== 401) message($("#save-msg"), e.message, true);
 		}
 	}
 
@@ -375,7 +373,7 @@
 		const [from, to] = (s.ActiveHours || "10:00-01:00").split("-");
 		form.elements.from.value = from.padStart(5, "0");
 		form.elements.to.value = to.padStart(5, "0");
-		toast($("#save-msg"), "");
+		message($("#save-msg"), "");
 	}
 
 	function collectSettings() {
@@ -409,7 +407,7 @@
 		const msg = $("#save-msg");
 		const form = $("#settings-form");
 		if (!form.elements.from.value || !form.elements.to.value) {
-			toast(msg, t("set.badHours"), true);
+			message(msg, t("set.badHours"), true);
 			return;
 		}
 
@@ -422,10 +420,10 @@
 		try {
 			await api(`${encodeURIComponent(state.bot)}/Settings`, { method: "POST", body: next });
 			state.settings = next;
-			toast(msg, t("set.saved"));
+			message(msg, t("set.saved"));
 			refreshStatus();
 		} catch (e) {
-			if (e.status !== 401) toast(msg, e.message, true);
+			if (e.status !== 401) message(msg, e.message, true);
 		}
 	}
 
@@ -433,9 +431,9 @@
 		const msg = $("#save-msg");
 		try {
 			const ok = await api(`${encodeURIComponent(state.bot)}/TestDiscord`, { method: "POST" });
-			toast(msg, ok === false ? t("set.testFail") : t("set.testOk"), ok === false);
+			message(msg, ok === false ? t("set.testFail") : t("set.testOk"), ok === false);
 		} catch (e) {
-			if (e.status !== 401) toast(msg, t("set.testFail"), true);
+			if (e.status !== 401) message(msg, t("set.testFail"), true);
 		}
 	}
 
@@ -446,13 +444,11 @@
 		try {
 			bots = await api("Bots");
 		} catch (e) {
-			if (e.status !== 401 && e.status !== 403) {
-				showLogin(e.message);
-			}
+			if (e.status !== 401 && e.status !== 403) showLogin(e.message);
 			return;
 		}
 
-		hideLogin();
+		$("#login").hidden = true;
 		const select = $("#bot");
 		select.replaceChildren(...bots.map(name => h("option", { value: name }, name)));
 		select.hidden = bots.length < 2;
@@ -467,17 +463,17 @@
 	}
 
 	function wire() {
-		$$(".lang button").forEach(b => b.addEventListener("click", () => {
-			state.lang = b.dataset.lang;
-			store.set(STORE.lang, state.lang);
+		$("#lang").addEventListener("click", () => {
+			state.lang = state.lang === "tr" ? "en" : "tr";
+			store.set(KEYS.lang, state.lang);
 			applyLanguage();
-		}));
+		});
 
-		$$(".tabs button").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.tab)));
+		$$(".side-menu button").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.tab)));
 
 		$("#bot").addEventListener("change", e => {
 			state.bot = e.target.value;
-			store.set(STORE.bot, state.bot);
+			store.set(KEYS.bot, state.bot);
 			state.status = null;
 			selectTab(state.tab);
 		});
@@ -485,7 +481,8 @@
 		$("#login-form").addEventListener("submit", e => {
 			e.preventDefault();
 			state.password = $("#login-password").value;
-			store.set(STORE.password, state.password);
+			// Same key and format as ASF-ui, so signing in here also signs in there (and the other way round)
+			store.set(ASF_KEYS.password, JSON.stringify(state.password));
 			start();
 		});
 
@@ -494,8 +491,10 @@
 		$("#detail-close").addEventListener("click", () => $("#detail").close());
 		$("#detail").addEventListener("click", e => { if (e.target.id === "detail") e.target.close(); });
 		document.addEventListener("visibilitychange", () => { if (!document.hidden && state.tab === "status") refreshStatus(); });
+		window.addEventListener("storage", e => { if (e.key && e.key.startsWith("asf-ui:layout")) applyTheme(); });
 	}
 
+	applyTheme();
 	wire();
 	applyLanguage();
 	start();

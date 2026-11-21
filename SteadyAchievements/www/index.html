@@ -3,177 +3,186 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>SteadyAchievements</title>
-	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2322c55e'/%3E%3Cpath d='M9 17l5 5 9-11' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+	<meta name="robots" content="noindex">
+	<title>SteadyAchievements · ASF</title>
+	<link rel="icon" href="/images/logo.png">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600">
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-	<header class="top">
-		<div class="brand">
-			<span class="logo" aria-hidden="true">✓</span>
-			<span>SteadyAchievements</span>
-		</div>
-		<div class="top-actions">
-			<select id="bot" aria-label="Bot" hidden></select>
-			<div class="lang" role="group" aria-label="Language">
-				<button type="button" data-lang="tr">TR</button>
-				<button type="button" data-lang="en">EN</button>
+	<div class="app" id="app">
+		<header class="navbar">
+			<a class="navbar__brand" href="/" title="ArchiSteamFarm">
+				<img src="/images/logo.png" alt="" width="24" height="24">
+				<span>ASF</span>
+			</a>
+			<span class="navbar__title">SteadyAchievements</span>
+			<div class="navbar__right">
+				<select id="bot" aria-label="Bot" hidden></select>
+				<button type="button" class="navbar__lang" id="lang" aria-label="Language">TR</button>
 			</div>
+		</header>
+
+		<nav class="side-menu" aria-label="Menu">
+			<button type="button" data-tab="status" data-i18n="tab.status"></button>
+			<button type="button" data-tab="settings" data-i18n="tab.settings"></button>
+			<button type="button" data-tab="history" data-i18n="tab.history"></button>
+			<button type="button" data-tab="help" data-i18n="tab.help"></button>
+			<a class="side-menu__back" href="/" data-i18n="nav.back"></a>
+		</nav>
+
+		<main class="main-container">
+			<!-- Login -->
+			<section id="login" class="box box--narrow" hidden>
+				<h2 class="box__title" data-i18n="login.title"></h2>
+				<p class="muted" data-i18n="login.text"></p>
+				<form id="login-form" class="form-item">
+					<input id="login-password" class="form-item__input" type="password" autocomplete="current-password" required>
+					<button type="submit" class="button button--confirm" data-i18n="login.button"></button>
+				</form>
+				<p id="login-error" class="text-error" hidden></p>
+			</section>
+
+			<!-- Status -->
+			<section id="tab-status" class="tab" hidden>
+				<div id="trimmed" class="notice" hidden data-i18n="status.trimmed"></div>
+
+				<div class="box">
+					<table class="facts">
+						<tr><th data-i18n="status.mode"></th><td id="f-mode"></td></tr>
+						<tr><th data-i18n="status.plugin"></th><td id="f-enabled"></td></tr>
+						<tr><th data-i18n="status.hours"></th><td id="f-hours"></td></tr>
+						<tr><th data-i18n="status.today"></th><td id="f-today"></td></tr>
+						<tr><th data-i18n="status.auto"></th><td id="f-auto"></td></tr>
+					</table>
+				</div>
+
+				<div class="box">
+					<h3 class="box__title" data-i18n="status.playing"></h3>
+					<div id="playing"></div>
+				</div>
+
+				<div class="box">
+					<h3 class="box__title" data-i18n="status.games"></h3>
+					<div id="games"></div>
+				</div>
+
+				<div class="box">
+					<h3 class="box__title"><span data-i18n="status.completed"></span> <span id="completed-count" class="muted"></span></h3>
+					<div id="completed"></div>
+				</div>
+			</section>
+
+			<!-- Settings -->
+			<section id="tab-settings" class="tab" hidden>
+				<form id="settings-form" novalidate>
+					<div class="box">
+						<h3 class="box__title" data-i18n="set.run"></h3>
+						<div class="form-item">
+							<span class="form-item__label" data-i18n="set.mode"></span>
+							<label class="radio"><input type="radio" name="mode" value="sim"> <span data-i18n="set.sim"></span></label>
+							<label class="radio"><input type="radio" name="mode" value="real"> <span data-i18n="set.real"></span></label>
+							<div class="form-item__description" data-i18n="set.modeHelp"></div>
+						</div>
+						<label class="check"><input type="checkbox" name="Enabled"> <span data-i18n="set.enabled"></span></label>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.language"></span>
+							<select class="form-item__input" name="Language"><option value="tr">Türkçe</option><option value="en">English</option></select>
+							<span class="form-item__description" data-i18n="set.languageHelp"></span>
+						</label>
+					</div>
+
+					<div class="box">
+						<h3 class="box__title" data-i18n="set.pace"></h3>
+						<div class="grid">
+							<label class="form-item"><span class="form-item__label" data-i18n="set.minDays"></span><input class="form-item__input" type="number" name="MinDays" min="1" max="365"></label>
+							<label class="form-item"><span class="form-item__label" data-i18n="set.maxDays"></span><input class="form-item__input" type="number" name="MaxDays" min="1" max="365"></label>
+						</div>
+						<p class="form-item__description" data-i18n="set.daysHelp"></p>
+						<div class="grid">
+							<label class="form-item"><span class="form-item__label" data-i18n="set.from"></span><input class="form-item__input" type="time" name="from" required></label>
+							<label class="form-item"><span class="form-item__label" data-i18n="set.to"></span><input class="form-item__input" type="time" name="to" required></label>
+						</div>
+						<p class="form-item__description" data-i18n="set.hoursHelp"></p>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.timeZone"></span><input class="form-item__input" type="text" name="TimeZone" placeholder="Europe/Istanbul" autocomplete="off">
+							<span class="form-item__description" data-i18n="set.timeZoneHelp"></span>
+						</label>
+						<div class="grid">
+							<label class="form-item"><span class="form-item__label" data-i18n="set.maxActive"></span><input class="form-item__input" type="number" name="MaxActiveGames" min="1" max="10"></label>
+							<label class="form-item"><span class="form-item__label" data-i18n="set.maxPerDay"></span><input class="form-item__input" type="number" name="MaxPerDay" min="1" max="200"></label>
+							<label class="form-item"><span class="form-item__label" data-i18n="set.minGap"></span><input class="form-item__input" type="number" name="MinGapMinutes" min="5" max="1440"></label>
+							<label class="form-item"><span class="form-item__label" data-i18n="set.minPlaytime"></span><input class="form-item__input" type="number" name="MinPlaytimeHours" min="0" max="1000" step="0.5"></label>
+							<label class="form-item"><span class="form-item__label" data-i18n="set.skipRarer"></span><input class="form-item__input" type="number" name="SkipRarerThan" min="0" max="50" step="0.1"></label>
+						</div>
+						<p class="form-item__description" data-i18n="set.paceHelp"></p>
+					</div>
+
+					<div class="box">
+						<h3 class="box__title" data-i18n="set.games"></h3>
+						<label class="check"><input type="checkbox" name="ExcludeVac"> <span data-i18n="set.vac"></span></label>
+						<label class="check"><input type="checkbox" name="ExcludeOnline"> <span data-i18n="set.online"></span></label>
+						<label class="check"><input type="checkbox" name="ProtectDlc"> <span data-i18n="set.dlc"></span></label>
+						<label class="check"><input type="checkbox" name="RespectAsfBlacklist"> <span data-i18n="set.asfBlacklist"></span></label>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.blacklist"></span><input class="form-item__input" type="text" name="Blacklist" inputmode="numeric" placeholder="730, 570"><span class="form-item__description" data-i18n="set.blacklistHelp"></span></label>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.allowlist"></span><input class="form-item__input" type="text" name="Allowlist" inputmode="numeric"><span class="form-item__description" data-i18n="set.allowlistHelp"></span></label>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.developers"></span><input class="form-item__input" type="text" name="BlockedDevelopers" placeholder="Valve"><span class="form-item__description" data-i18n="set.namesHelp"></span></label>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.publishers"></span><input class="form-item__input" type="text" name="BlockedPublishers"></label>
+					</div>
+
+					<div class="box">
+						<h3 class="box__title" data-i18n="set.auto"></h3>
+						<label class="check"><input type="checkbox" name="AutoPlay"> <span data-i18n="set.autoPlay"></span></label>
+						<p class="form-item__description" data-i18n="set.autoHelp"></p>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.rotate"></span><input class="form-item__input input--short" type="number" name="AutoPlayRotateHours" min="1" max="48"></label>
+					</div>
+
+					<div class="box">
+						<h3 class="box__title">Discord</h3>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.webhook"></span><input class="form-item__input" type="url" name="DiscordWebhook" placeholder="https://discord.com/api/webhooks/..." autocomplete="off"></label>
+						<label class="check"><input type="checkbox" name="NotifyCompleted"> <span data-i18n="set.nCompleted"></span></label>
+						<label class="check"><input type="checkbox" name="NotifyEachUnlock"> <span data-i18n="set.nEach"></span></label>
+						<label class="check"><input type="checkbox" name="NotifyDailySummary"> <span data-i18n="set.nSummary"></span></label>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.summaryHour"></span><input class="form-item__input input--short" type="number" name="DailySummaryHour" min="0" max="23"></label>
+						<label class="check"><input type="checkbox" name="NotifyProblems"> <span data-i18n="set.nProblems"></span></label>
+						<button type="button" class="button" id="test-discord" data-i18n="set.test"></button>
+					</div>
+
+					<div class="save-bar">
+						<span id="save-msg" class="muted"></span>
+						<button type="submit" class="button button--confirm" data-i18n="set.save"></button>
+					</div>
+				</form>
+			</section>
+
+			<!-- History -->
+			<section id="tab-history" class="tab" hidden>
+				<div class="box">
+					<h3 class="box__title" data-i18n="tab.history"></h3>
+					<div id="history"></div>
+				</div>
+			</section>
+
+			<!-- Help -->
+			<section id="tab-help" class="tab" hidden>
+				<div class="box prose" id="help"></div>
+			</section>
+		</main>
+	</div>
+
+	<dialog id="detail" class="modal">
+		<div class="modal__head">
+			<h3 id="detail-title"></h3>
+			<button type="button" class="modal__close" id="detail-close" aria-label="Close">✕</button>
 		</div>
-	</header>
-
-	<nav class="tabs" role="tablist">
-		<button type="button" role="tab" data-tab="status" data-i18n="tab.status"></button>
-		<button type="button" role="tab" data-tab="settings" data-i18n="tab.settings"></button>
-		<button type="button" role="tab" data-tab="history" data-i18n="tab.history"></button>
-		<button type="button" role="tab" data-tab="help" data-i18n="tab.help"></button>
-	</nav>
-
-	<main>
-		<!-- Login -->
-		<section id="login" class="card narrow" hidden>
-			<h2 data-i18n="login.title"></h2>
-			<p class="muted" data-i18n="login.text"></p>
-			<form id="login-form">
-				<input id="login-password" type="password" autocomplete="current-password" required>
-				<button type="submit" class="primary" data-i18n="login.button"></button>
-			</form>
-			<p id="login-error" class="error" hidden></p>
-		</section>
-
-		<!-- Status -->
-		<section id="tab-status" class="tab" hidden>
-			<div id="trimmed" class="banner warn" hidden data-i18n="status.trimmed"></div>
-			<div class="summary card">
-				<div class="mode-line">
-					<span id="mode-badge" class="badge"></span>
-					<span id="enabled-badge" class="badge"></span>
-					<span id="window-badge" class="badge"></span>
-					<span id="auto-badge" class="badge"></span>
-				</div>
-				<div class="stats">
-					<div><span class="label" data-i18n="status.today"></span><strong id="today"></strong></div>
-					<div><span class="label" data-i18n="status.hours"></span><strong id="hours"></strong></div>
-					<div><span class="label" data-i18n="status.localTime"></span><strong id="local-time"></strong></div>
-				</div>
-			</div>
-
-			<h3 data-i18n="status.playing"></h3>
-			<div id="playing" class="list"></div>
-
-			<h3 data-i18n="status.games"></h3>
-			<div id="games" class="grid"></div>
-
-			<details id="completed-box">
-				<summary><span data-i18n="status.completed"></span> <span id="completed-count" class="muted"></span></summary>
-				<div id="completed" class="list"></div>
-			</details>
-		</section>
-
-		<!-- Settings -->
-		<section id="tab-settings" class="tab" hidden>
-			<form id="settings-form" novalidate>
-				<fieldset class="card">
-					<legend data-i18n="set.run"></legend>
-					<div class="mode-choice">
-						<label class="choice"><input type="radio" name="mode" value="sim"><span><strong data-i18n="set.sim"></strong><small data-i18n="set.simHelp"></small></span></label>
-						<label class="choice danger"><input type="radio" name="mode" value="real"><span><strong data-i18n="set.real"></strong><small data-i18n="set.realHelp"></small></span></label>
-					</div>
-					<label class="switch"><input type="checkbox" name="Enabled"><span data-i18n="set.enabled"></span></label>
-					<label class="field"><span data-i18n="set.language"></span>
-						<select name="Language"><option value="tr">Türkçe</option><option value="en">English</option></select>
-						<small data-i18n="set.languageHelp"></small>
-					</label>
-				</fieldset>
-
-				<fieldset class="card">
-					<legend data-i18n="set.pace"></legend>
-					<div class="row">
-						<label class="field"><span data-i18n="set.minDays"></span><input type="number" name="MinDays" min="1" max="365"></label>
-						<label class="field"><span data-i18n="set.maxDays"></span><input type="number" name="MaxDays" min="1" max="365"></label>
-					</div>
-					<small class="help" data-i18n="set.daysHelp"></small>
-					<div class="row">
-						<label class="field"><span data-i18n="set.from"></span><input type="time" name="from" required></label>
-						<label class="field"><span data-i18n="set.to"></span><input type="time" name="to" required></label>
-					</div>
-					<small class="help" data-i18n="set.hoursHelp"></small>
-					<label class="field"><span data-i18n="set.timeZone"></span><input type="text" name="TimeZone" placeholder="Europe/Istanbul" autocomplete="off">
-						<small data-i18n="set.timeZoneHelp"></small>
-					</label>
-					<div class="row">
-						<label class="field"><span data-i18n="set.maxActive"></span><input type="number" name="MaxActiveGames" min="1" max="10"></label>
-						<label class="field"><span data-i18n="set.maxPerDay"></span><input type="number" name="MaxPerDay" min="1" max="200"></label>
-						<label class="field"><span data-i18n="set.minGap"></span><input type="number" name="MinGapMinutes" min="5" max="1440"></label>
-					</div>
-					<div class="row">
-						<label class="field"><span data-i18n="set.minPlaytime"></span><input type="number" name="MinPlaytimeHours" min="0" max="1000" step="0.5"></label>
-						<label class="field"><span data-i18n="set.skipRarer"></span><input type="number" name="SkipRarerThan" min="0" max="50" step="0.1"></label>
-					</div>
-					<small class="help" data-i18n="set.paceHelp"></small>
-				</fieldset>
-
-				<fieldset class="card">
-					<legend data-i18n="set.games"></legend>
-					<label class="switch"><input type="checkbox" name="ExcludeVac"><span data-i18n="set.vac"></span></label>
-					<label class="switch"><input type="checkbox" name="ExcludeOnline"><span data-i18n="set.online"></span></label>
-					<label class="switch"><input type="checkbox" name="ProtectDlc"><span data-i18n="set.dlc"></span></label>
-					<label class="switch"><input type="checkbox" name="RespectAsfBlacklist"><span data-i18n="set.asfBlacklist"></span></label>
-					<label class="field"><span data-i18n="set.blacklist"></span><input type="text" name="Blacklist" inputmode="numeric" placeholder="730, 570"><small data-i18n="set.blacklistHelp"></small></label>
-					<label class="field"><span data-i18n="set.allowlist"></span><input type="text" name="Allowlist" inputmode="numeric"><small data-i18n="set.allowlistHelp"></small></label>
-					<label class="field"><span data-i18n="set.developers"></span><input type="text" name="BlockedDevelopers" placeholder="Valve"><small data-i18n="set.namesHelp"></small></label>
-					<label class="field"><span data-i18n="set.publishers"></span><input type="text" name="BlockedPublishers"></label>
-				</fieldset>
-
-				<fieldset class="card">
-					<legend data-i18n="set.auto"></legend>
-					<label class="switch"><input type="checkbox" name="AutoPlay"><span data-i18n="set.autoPlay"></span></label>
-					<small class="help" data-i18n="set.autoHelp"></small>
-					<label class="field"><span data-i18n="set.rotate"></span><input type="number" name="AutoPlayRotateHours" min="1" max="48"></label>
-				</fieldset>
-
-				<fieldset class="card">
-					<legend>Discord</legend>
-					<label class="field"><span data-i18n="set.webhook"></span><input type="url" name="DiscordWebhook" placeholder="https://discord.com/api/webhooks/..." autocomplete="off"></label>
-					<label class="switch"><input type="checkbox" name="NotifyCompleted"><span data-i18n="set.nCompleted"></span></label>
-					<label class="switch"><input type="checkbox" name="NotifyEachUnlock"><span data-i18n="set.nEach"></span></label>
-					<label class="switch"><input type="checkbox" name="NotifyDailySummary"><span data-i18n="set.nSummary"></span></label>
-					<label class="field"><span data-i18n="set.summaryHour"></span><input type="number" name="DailySummaryHour" min="0" max="23"></label>
-					<label class="switch"><input type="checkbox" name="NotifyProblems"><span data-i18n="set.nProblems"></span></label>
-					<button type="button" id="test-discord" data-i18n="set.test"></button>
-				</fieldset>
-
-				<div class="save-bar">
-					<span id="save-msg" class="muted"></span>
-					<button type="submit" class="primary" data-i18n="set.save"></button>
-				</div>
-			</form>
-		</section>
-
-		<!-- History -->
-		<section id="tab-history" class="tab" hidden>
-			<div id="history" class="list"></div>
-		</section>
-
-		<!-- Help -->
-		<section id="tab-help" class="tab card prose" hidden></section>
-	</main>
-
-	<dialog id="detail">
-		<div class="dialog-head">
-			<h2 id="detail-title"></h2>
-			<button type="button" class="icon" id="detail-close" aria-label="Close">✕</button>
-		</div>
-		<div id="detail-tools" class="detail-tools"></div>
-		<div id="detail-body" class="ach-list"></div>
+		<div id="detail-tools" class="muted small"></div>
+		<div id="detail-body"></div>
 	</dialog>
 
-	<dialog id="confirm-real">
-		<h2 data-i18n="real.title"></h2>
+	<dialog id="confirm-real" class="modal modal--small">
+		<div class="modal__head"><h3 data-i18n="real.title"></h3></div>
 		<p data-i18n="real.text"></p>
-		<div class="dialog-actions">
-			<button type="button" value="cancel" data-i18n="real.cancel"></button>
-			<button type="button" value="ok" class="danger-btn" data-i18n="real.ok"></button>
+		<div class="modal__actions">
+			<button type="button" value="cancel" class="button" data-i18n="real.cancel"></button>
+			<button type="button" value="ok" class="button button--cancel" data-i18n="real.ok"></button>
 		</div>
 	</dialog>
 
