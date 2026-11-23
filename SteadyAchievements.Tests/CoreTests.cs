@@ -43,90 +43,99 @@ public sealed class ActiveWindowTests {
 public sealed class PlannerTests {
 	internal static AchievementDef Def(string api, bool unlocked = false, bool isProtected = false) => new(api, api, "", 1, int.Parse(api[1..], System.Globalization.CultureInfo.InvariantCulture) % 32, unlocked, isProtected, false, null, 0, "", "");
 
-	private static BotSettings Settings() => new() { MinDays = 30, MaxDays = 45, MinGapMinutes = 15 };
+	private static BotSettings Settings() => new() { MinGapMinutes = 15 };
 
 	[TestMethod]
 	public void ExcludesProtectedAndUnlocked() {
 		List<AchievementDef> schema = [Def("a1"), Def("a2", unlocked: true), Def("a3", isProtected: true), Def("a4")];
-		GamePlan plan = Planner.Create(1, "G", schema, new Dictionary<string, double>(), Settings(), 900, new Random(1), DateTime.UtcNow);
+		GamePlan plan = Planner.Create(1, "G", schema, new Dictionary<string, double>(), Settings(), 0, new Random(1), DateTime.UtcNow);
 
 		CollectionAssert.AreEquivalent(new[] { "a1", "a4" }, plan.Steps.Select(static s => s.ApiName).ToArray());
 		Assert.AreEqual(1, plan.ProtectedCount);
 		Assert.AreEqual(1, plan.UnlockedBefore);
+		Assert.AreEqual(Planner.Model, plan.Model);
 		Assert.IsFalse(plan.IsCompleted);
 	}
 
 	[TestMethod]
 	public void NothingToDoIsCompleted() {
-		GamePlan plan = Planner.Create(1, "G", [Def("a1", isProtected: true), Def("a2", unlocked: true)], new Dictionary<string, double>(), Settings(), 900, new Random(1), DateTime.UtcNow);
+		GamePlan plan = Planner.Create(1, "G", [Def("a1", isProtected: true), Def("a2", unlocked: true)], new Dictionary<string, double>(), Settings(), 0, new Random(1), DateTime.UtcNow);
 
 		Assert.AreEqual(0, plan.Steps.Count);
 		Assert.IsTrue(plan.IsCompleted);
 	}
 
 	[TestMethod]
-	public void BudgetWithinDaysAndGapsRespected() {
+	[DataRow(80, 0.0, 0.2)]
+	[DataRow(30, 0.9, 1.5)]
+	[DataRow(10, 3.5, 5)]
+	[DataRow(1, 15, 19)]
+	[DataRow(0.01, 60, 75)]
+	public void HoursOfPlayFollowRarity(double percent, double min, double max) {
+		double hours = Planner.PlayHours(percent, 1);
+
+		Assert.IsTrue((hours >= min) && (hours <= max), $"{percent}% -> {hours} h");
+	}
+
+	[TestMethod]
+	public void PaceScalesTheHours() {
+		Assert.AreEqual(Planner.PlayHours(5, 1) * 2, Planner.PlayHours(5, 2), 1e-9);
+		Assert.AreEqual(Planner.PlayHours(5, 1) / 2, Planner.PlayHours(5, 0.5), 1e-9);
+	}
+
+	[TestMethod]
+	public void DueTimesRiseWithRarityAndKeepTheGap() {
 		List<AchievementDef> schema = Enumerable.Range(0, 40).Select(static i => Def($"a{i}")).ToList();
-		Dictionary<string, double> percents = schema.Select((a, i) => (a.ApiName, P: 1.0 + (i * 2))).ToDictionary(static x => x.ApiName, static x => x.P);
+		Dictionary<string, double> percents = schema.Select((a, i) => (a.ApiName, P: 80.0 / (i + 1))).ToDictionary(static x => x.ApiName, static x => x.P);
 
 		for (int seed = 0; seed < 50; seed++) {
-			GamePlan plan = Planner.Create(1, "G", schema, percents, Settings(), 900, new Random(seed), DateTime.UtcNow);
-			List<long> due = plan.Steps.Select(static s => s.DueMinute).ToList();
+			GamePlan plan = Planner.Create(1, "G", schema, percents, Settings(), 0, new Random(seed), DateTime.UtcNow);
+			List<PlanStep> ordered = plan.Steps.OrderBy(static s => s.DueMinute).ToList();
 
-			Assert.IsTrue(plan.BudgetMinutes is >= 30 * 900 and <= 45 * 900, $"budget {plan.BudgetMinutes}");
-			Assert.IsTrue(due[0] >= 15);
-			Assert.IsTrue(due.Zip(due.Skip(1)).All(static p => p.Second - p.First >= 14), "min gap");
+			Assert.IsTrue(ordered.Zip(ordered.Skip(1)).All(static p => p.Second.DueMinute - p.First.DueMinute >= 14), "min gap");
+			Assert.AreEqual(plan.LastDue(), plan.BudgetMinutes);
 
-			// Last one lands close to the budget (min-gap clamping may push it a bit further)
-			Assert.IsTrue(due[^1] >= plan.BudgetMinutes * 0.95 && due[^1] <= plan.BudgetMinutes * 1.15, $"last {due[^1]} budget {plan.BudgetMinutes}");
+			double common = ordered.Where(static s => s.Percent >= 20).Average(static s => s.DueMinute);
+			double rare = ordered.Where(static s => s.Percent < 3).Average(static s => s.DueMinute);
+			Assert.IsTrue(rare > common * 5, $"common {common} rare {rare}");
 		}
 	}
 
 	[TestMethod]
-	public void HalfDoneGameGetsAboutHalfTheTime() {
-		List<AchievementDef> schema = Enumerable.Range(0, 20).Select(i => Def($"a{i}", unlocked: i < 10)).ToList();
-		GamePlan plan = Planner.Create(1, "G", schema, new Dictionary<string, double>(), new BotSettings { MinDays = 30, MaxDays = 30, MinGapMinutes = 15 }, 600, new Random(3), DateTime.UtcNow);
+	public void FirstHoursAlreadyHaveSeveralAchievements() {
+		// Like a typical story game: a few achievements most players get in the first hours
+		List<AchievementDef> schema = Enumerable.Range(0, 8).Select(static i => Def($"a{i}")).ToList();
+		Dictionary<string, double> percents = new() { ["a0"] = 76.6, ["a1"] = 65.2, ["a2"] = 45.7, ["a3"] = 34.1, ["a4"] = 17.1, ["a5"] = 8.6, ["a6"] = 2.1, ["a7"] = 0.4 };
+		double dueInThreeHours = 0;
 
-		Assert.AreEqual(30 * 600 / 2, plan.BudgetMinutes);
+		for (int seed = 0; seed < 200; seed++) {
+			GamePlan plan = Planner.Create(1, "G", schema, percents, new BotSettings(), 0, new Random(seed), DateTime.UtcNow);
+			dueInThreeHours += plan.Steps.Count(static s => s.DueMinute <= 180);
+		}
+
+		dueInThreeHours /= 200;
+		Assert.IsTrue(dueInThreeHours is >= 3.5 and <= 6, $"average due in 3 h: {dueInThreeHours}");
 	}
 
 	[TestMethod]
-	public void CommonAchievementsTendToComeFirst() {
+	public void PlaytimeSoFarStartsTheClock() {
+		GamePlan plan = Planner.Create(1, "G", [Def("a1"), Def("a2")], new Dictionary<string, double> { ["a1"] = 70, ["a2"] = 0.5 }, Settings(), 600, new Random(1), DateTime.UtcNow);
+
+		Assert.AreEqual(600, plan.ActiveMinutes);
+		Assert.IsTrue(plan.Steps.Single(static s => s.ApiName == "a1").DueMinute <= 600, "a common achievement is already due after 10 h of play");
+		Assert.IsTrue(plan.Steps.Single(static s => s.ApiName == "a2").DueMinute > 600, "a 0.5% one is not");
+	}
+
+	[TestMethod]
+	public void CommonAchievementsComeFirst() {
 		List<AchievementDef> schema = [Def("a1"), Def("a2")];
 		Dictionary<string, double> percents = new() { ["a1"] = 80, ["a2"] = 2 };
-		int commonFirst = 0;
 
-		for (int seed = 0; seed < 1000; seed++) {
-			GamePlan plan = Planner.Create(1, "G", schema, percents, Settings(), 900, new Random(seed), DateTime.UtcNow);
+		for (int seed = 0; seed < 300; seed++) {
+			GamePlan plan = Planner.Create(1, "G", schema, percents, Settings(), 0, new Random(seed), DateTime.UtcNow);
 
-			if (plan.Steps.OrderBy(static s => s.DueMinute).First().ApiName == "a1") {
-				commonFirst++;
-			}
+			Assert.AreEqual("a1", plan.Steps.OrderBy(static s => s.DueMinute).First().ApiName, $"seed {seed}");
 		}
-
-		Assert.IsTrue(commonFirst > 950, $"common first {commonFirst}/1000");
-	}
-
-	[TestMethod]
-	public void RareGapsAreLonger() {
-		List<AchievementDef> schema = Enumerable.Range(0, 2).Select(static i => Def($"a{i}")).ToList();
-		Dictionary<string, double> percents = new() { ["a0"] = 90, ["a1"] = 0.5 };
-		double rareGap = 0;
-		double commonGap = 0;
-
-		for (int seed = 0; seed < 500; seed++) {
-			GamePlan plan = Planner.Create(1, "G", schema, percents, new BotSettings { MinDays = 30, MaxDays = 30, MinGapMinutes = 5 }, 900, new Random(seed), DateTime.UtcNow);
-			List<PlanStep> ordered = plan.Steps.OrderBy(static s => s.DueMinute).ToList();
-			long first = ordered[0].DueMinute;
-			long second = ordered[1].DueMinute - first;
-
-			if (ordered[0].ApiName == "a0") {
-				commonGap += first;
-				rareGap += second;
-			}
-		}
-
-		Assert.IsTrue(rareGap > commonGap * 2, $"rare {rareGap} common {commonGap}");
 	}
 
 	[TestMethod]
@@ -136,22 +145,22 @@ public sealed class PlannerTests {
 		BotSettings settings = Settings();
 		settings.SkipRarerThan = 1;
 
-		GamePlan plan = Planner.Create(1, "G", schema, percents, settings, 900, new Random(1), DateTime.UtcNow);
+		GamePlan plan = Planner.Create(1, "G", schema, percents, settings, 0, new Random(1), DateTime.UtcNow);
 
 		CollectionAssert.AreEquivalent(new[] { "a2", "a3" }, plan.Steps.Select(static s => s.ApiName).ToArray());
 		Assert.AreEqual(1, plan.SkippedRare);
 	}
 
 	[TestMethod]
-	public void ExtendAppendsAfterLastStep() {
+	public void ExtendCountsFromCurrentPlaytime() {
 		BotSettings settings = Settings();
-		GamePlan plan = Planner.Create(1, "G", [Def("a1"), Def("a2")], new Dictionary<string, double>(), settings, 900, new Random(1), DateTime.UtcNow);
-		long last = plan.Steps.Max(static s => s.DueMinute);
+		GamePlan plan = Planner.Create(1, "G", [Def("a1"), Def("a2")], new Dictionary<string, double>(), settings, 0, new Random(1), DateTime.UtcNow);
+		plan.ActiveMinutes = 5000;
 
-		int added = Planner.Extend(plan, [Def("a1"), Def("a2"), Def("a3"), Def("a4", isProtected: true)], new Dictionary<string, double>(), settings, 900, new Random(2));
+		int added = Planner.Extend(plan, [Def("a1"), Def("a2"), Def("a3"), Def("a4", isProtected: true)], new Dictionary<string, double>(), settings, new Random(2));
 
 		Assert.AreEqual(1, added);
-		Assert.IsTrue(plan.Steps.Single(static s => s.ApiName == "a3").DueMinute > last);
+		Assert.IsTrue(plan.Steps.Single(static s => s.ApiName == "a3").DueMinute > 5000);
 	}
 }
 
@@ -176,7 +185,7 @@ public sealed class ChainTests {
 		Dictionary<string, double> percents = new() { ["m1000"] = 60, ["m100"] = 40, ["m30"] = 5, ["k50"] = 50, ["k10"] = 2, ["x"] = 20, ["lvl20"] = 70, ["lvl5"] = 1 };
 
 		for (int seed = 0; seed < 300; seed++) {
-			GamePlan plan = Planner.Create(1, "G", schema, percents, new BotSettings { MinDays = 30, MaxDays = 30, MinGapMinutes = 15 }, 900, new Random(seed), DateTime.UtcNow);
+			GamePlan plan = Planner.Create(1, "G", schema, percents, new BotSettings { MinGapMinutes = 15 }, 0, new Random(seed), DateTime.UtcNow);
 			Dictionary<string, long> due = plan.Steps.ToDictionary(static s => s.ApiName, static s => s.DueMinute);
 
 			Assert.IsTrue(due["m30"] < due["m100"] && due["m100"] < due["m1000"], $"matches, seed {seed}");
@@ -209,14 +218,14 @@ public sealed class EngineTests {
 	private static TickInput Input(IReadOnlyList<uint> playing, DateTime now, int today = 0, bool inWindow = true, IReadOnlySet<uint>? cooling = null) => new(playing, cooling ?? new HashSet<uint>(), inWindow, now, today);
 
 	[TestMethod]
-	public void OutsideWindowDoesNothing() {
+	public void OutsideWindowCountsPlayButNeverUnlocks() {
 		BotState state = new();
 		state.Plans[1] = PlanWith(1, DateTime.UtcNow, 0);
 
 		TickOutput output = Engine.Tick(state, new BotSettings(), Input([1], DateTime.UtcNow, inWindow: false));
 
 		Assert.IsNull(output.UnlockStep);
-		Assert.AreEqual(0, state.Plans[1].ActiveMinutes);
+		Assert.AreEqual(1, state.Plans[1].ActiveMinutes, "play time counts at any hour");
 	}
 
 	[TestMethod]
@@ -267,14 +276,15 @@ public sealed class EngineTests {
 	}
 
 	[TestMethod]
-	public void CoolingGamesAreSkipped() {
+	public void CoolingGamesGetNoSlotButStillCountPlay() {
 		BotState state = new();
 		state.Plans[1] = PlanWith(1, DateTime.UtcNow, 0);
 
 		TickOutput output = Engine.Tick(state, new BotSettings(), Input([1], DateTime.UtcNow, cooling: new HashSet<uint> { 1 }));
 
 		Assert.AreEqual(0, output.Slots.Count);
-		Assert.AreEqual(0, state.Plans[1].ActiveMinutes);
+		Assert.IsNull(output.UnlockStep);
+		Assert.AreEqual(1, state.Plans[1].ActiveMinutes);
 	}
 
 	[TestMethod]
@@ -386,7 +396,7 @@ public sealed class SettingsTests {
 
 	[TestMethod]
 	public void CatchesBadValues() {
-		BotSettings s = new() { MinDays = 40, MaxDays = 10, ActiveHours = "x", MaxActiveGames = 0, DiscordWebhook = "https://evil.example/api/webhooks/1" };
+		BotSettings s = new() { PaceScale = 9, ActiveHours = "x", MaxActiveGames = 0, DiscordWebhook = "https://evil.example/api/webhooks/1" };
 
 		Assert.AreEqual(4, s.Validate(Clock.IsValidTimeZone).Count);
 	}

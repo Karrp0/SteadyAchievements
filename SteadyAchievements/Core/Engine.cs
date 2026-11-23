@@ -19,26 +19,31 @@ internal sealed record TickOutput(IReadOnlyList<uint> Slots, IReadOnlyList<uint>
 }
 
 // One minute of progress for one bot. Pure: it only changes the in-memory state it is given
-// (active minutes) and tells the caller what to create or unlock.
+// (minutes of play) and tells the caller what to create or unlock.
+//
+// Every eligible game being played gains a minute of play, at any hour, like Steam's own playtime.
+// Unlocks only happen inside the active window, for the games holding one of the MaxActiveGames slots.
 internal static class Engine {
 	internal static TickOutput Tick(BotState state, BotSettings settings, TickInput input) {
 		ArgumentNullException.ThrowIfNull(state);
 		ArgumentNullException.ThrowIfNull(settings);
 		ArgumentNullException.ThrowIfNull(input);
 
-		if (!settings.Enabled || !input.InWindow) {
+		if (!settings.Enabled) {
 			return TickOutput.Idle;
 		}
 
-		List<uint> slots = PickSlots(state, settings, input);
-		List<uint> needPlan = [];
-
-		foreach (uint appId in slots) {
-			if (state.Plans.TryGetValue(appId, out GamePlan? plan)) {
-				plan.ActiveMinutes++;
-			} else {
-				needPlan.Add(appId);
+		foreach (uint appId in input.PlayingEligible.Distinct()) {
+			if (state.Plans.TryGetValue(appId, out GamePlan? played) && !played.IsCompleted) {
+				played.ActiveMinutes++;
 			}
+		}
+
+		List<uint> slots = PickSlots(state, settings, input);
+		List<uint> needPlan = slots.Where(appId => !state.Plans.ContainsKey(appId)).ToList();
+
+		if (!input.InWindow) {
+			return new TickOutput(slots, needPlan, 0, null);
 		}
 
 		(uint unlockAppId, PlanStep? step) = PickDue(state, settings, input, slots);

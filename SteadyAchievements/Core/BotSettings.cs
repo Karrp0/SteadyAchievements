@@ -7,7 +7,8 @@ namespace SteadyAchievements.Core;
 // Per-bot settings, stored in config/SteadyAchievements/<bot>.settings.json and edited from the panel.
 // Plain mutable properties keep JSON round-trips simple; always Normalize() + Validate() before use.
 public sealed class BotSettings {
-	internal const int MaxDaysLimit = 365;
+	internal const double MinPace = 0.25;
+	internal const double MaxPace = 4;
 	internal const int MaxActiveGamesLimit = 10;
 
 	// How it runs
@@ -15,9 +16,8 @@ public sealed class BotSettings {
 	public bool Simulation { get; set; } = true;
 	public string Language { get; set; } = "tr";
 
-	// Pace
-	public int MinDays { get; set; } = 30;
-	public int MaxDays { get; set; } = 50;
+	// Pace: multiplies how many hours of play each achievement needs (1 = normal, below 1 = faster)
+	public double PaceScale { get; set; } = 1;
 	public string ActiveHours { get; set; } = "10:00-01:00";
 	public string? TimeZone { get; set; }
 	public int MaxActiveGames { get; set; } = 2;
@@ -76,12 +76,8 @@ public sealed class BotSettings {
 		string lang = Language;
 		List<string> errors = [];
 
-		if (MinDays is < 1 or > MaxDaysLimit) {
-			errors.Add(Texts.Format(lang, "val.minDays", MaxDaysLimit));
-		}
-
-		if ((MaxDays < MinDays) || (MaxDays > MaxDaysLimit)) {
-			errors.Add(Texts.Format(lang, "val.maxDays", MaxDaysLimit));
+		if (double.IsNaN(PaceScale) || PaceScale is < MinPace or > MaxPace) {
+			errors.Add(Texts.Format(lang, "val.pace", MinPace, MaxPace));
 		}
 
 		if (!ActiveWindow.TryParse(ActiveHours, out _)) {

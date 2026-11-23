@@ -133,11 +133,16 @@
 
 					<div class="box">
 						<h3 class="box__title" data-i18n="set.pace"></h3>
-						<div class="grid">
-							<label class="form-item"><span class="form-item__label" data-i18n="set.minDays"></span><input class="form-item__input" type="number" name="MinDays" min="1" max="365"></label>
-							<label class="form-item"><span class="form-item__label" data-i18n="set.maxDays"></span><input class="form-item__input" type="number" name="MaxDays" min="1" max="365"></label>
-						</div>
-						<p class="form-item__description" data-i18n="set.daysHelp"></p>
+						<label class="form-item"><span class="form-item__label" data-i18n="set.speed"></span>
+							<select class="form-item__input input--medium" name="PaceScale" data-number>
+								<option value="0.5" data-i18n="set.speed.0.5"></option>
+								<option value="0.75" data-i18n="set.speed.0.75"></option>
+								<option value="1" data-i18n="set.speed.1"></option>
+								<option value="1.5" data-i18n="set.speed.1.5"></option>
+								<option value="2" data-i18n="set.speed.2"></option>
+							</select>
+							<span class="form-item__description" data-i18n="set.speedHelp"></span>
+						</label>
 						<div class="grid">
 							<label class="form-item"><span class="form-item__label" data-i18n="set.from"></span><input class="form-item__input" type="time" name="from" required></label>
 							<label class="form-item"><span class="form-item__label" data-i18n="set.to"></span><input class="form-item__input" type="time" name="to" required></label>

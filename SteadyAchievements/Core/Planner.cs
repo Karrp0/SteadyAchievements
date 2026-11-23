@@ -4,48 +4,48 @@ using System.Linq;
 
 namespace SteadyAchievements.Core;
 
-// Builds the unlock schedule of a game.
+// Builds the unlock schedule of a game from how players actually earn achievements.
 //
-// Time is measured in "active minutes": minutes in which the game is being played inside the active window.
-// 1) Budget: a random number of days between MinDays and MaxDays, times the active minutes per day,
-//    scaled by the share of achievements still left (a half-finished game needs about half the time).
-// 2) Order: Plackett-Luce sampling with weight percent^Sharpness (Gumbel-max trick), so common
-//    achievements tend to come first and rare ones last, but never in a fixed order.
-// 3) Spacing: the wait before an achievement grows with its "surprise" 1 + ln(100 / percent), with
-//    log-normal noise, scaled to fill the budget and never shorter than MinGapMinutes.
+// The plan clock is minutes of play: it starts at the game's Steam playtime when the plan is made and
+// advances whenever the game is played.
+// 1) Target: an achievement that p% of players have is due after about
+//        PlayHours(p) = HoursFactor * PaceScale * ln(100 / p)^2   hours of play
+//    At normal pace: 80% → minutes, 30% → ~1 h, 10% → ~4 h, 1% → ~17 h, 0.01% → ~68 h.
+//    Log-normal noise makes every plan different.
+// 2) Order: by target, so common achievements come first; tiered chains ("30 matches" before
+//    "100 matches") always keep their natural order.
+// 3) Spacing: never closer than MinGapMinutes to the previous one.
 internal static class Planner {
-	internal const double UnknownPercent = 50;
-	internal const double MinPercent = 0.05;
-	internal const double Sharpness = 1.35;
-	internal const double GapNoise = 0.35;
+	// Plans made with an older model are rebuilt once
+	internal const int Model = 2;
 
-	internal static GamePlan Create(uint appId, string name, IReadOnlyList<AchievementDef> schema, IReadOnlyDictionary<string, double> percents, BotSettings settings, int windowMinutesPerDay, Random random, DateTime nowUtc) {
+	internal const double UnknownPercent = 50;
+	internal const double MinPercent = 0.01;
+	internal const double HoursFactor = 0.8;
+	internal const double MinHours = 0.1;
+	internal const double Noise = 0.3;
+
+	internal static double PlayHours(double percent, double paceScale) {
+		double surprise = Math.Log(100 / Math.Min(Math.Max(percent, MinPercent), 100));
+
+		return Math.Max(MinHours, HoursFactor * paceScale * surprise * surprise);
+	}
+
+	internal static GamePlan Create(uint appId, string name, IReadOnlyList<AchievementDef> schema, IReadOnlyDictionary<string, double> percents, BotSettings settings, long playedMinutes, Random random, DateTime nowUtc) {
 		ArgumentNullException.ThrowIfNull(schema);
 		ArgumentNullException.ThrowIfNull(percents);
 		ArgumentNullException.ThrowIfNull(settings);
 		ArgumentNullException.ThrowIfNull(random);
-		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(windowMinutesPerDay);
 
 		List<AchievementDef> unlockable = schema.Where(static a => !a.Protected).ToList();
-		List<(AchievementDef Def, double Percent)> candidates = [];
-		int skippedRare = 0;
-
-		foreach (AchievementDef def in unlockable.Where(static a => !a.Unlocked)) {
-			double percent = PercentOf(def.ApiName, percents);
-
-			if ((settings.SkipRarerThan > 0) && percents.ContainsKey(def.ApiName) && (percent < settings.SkipRarerThan)) {
-				skippedRare++;
-
-				continue;
-			}
-
-			candidates.Add((def, percent));
-		}
+		List<(AchievementDef Def, double Percent)> candidates = Candidates(unlockable.Where(static a => !a.Unlocked), percents, settings, out int skippedRare);
 
 		GamePlan plan = new() {
+			Model = Model,
 			AppId = appId,
 			Name = name,
 			CreatedUtc = nowUtc,
+			ActiveMinutes = Math.Max(0, playedMinutes),
 			TotalAchievements = schema.Count,
 			ProtectedCount = schema.Count - unlockable.Count,
 			UnlockedBefore = unlockable.Count(static a => a.Unlocked),
@@ -58,18 +58,15 @@ internal static class Planner {
 			return plan;
 		}
 
-		double days = settings.MinDays + (random.NextDouble() * (settings.MaxDays - settings.MinDays));
-		double share = (double) candidates.Count / unlockable.Count;
-		double budget = Math.Max(days * windowMinutesPerDay * share, (double) candidates.Count * settings.MinGapMinutes);
-
-		plan.BudgetMinutes = (long) Math.Round(budget);
-		plan.Steps = Schedule(candidates, budget, settings.MinGapMinutes, random, 0);
+		// Targets are absolute play time: a game already played for hours starts with its early achievements due
+		plan.Steps = Schedule(candidates, settings, random, 0);
+		plan.BudgetMinutes = plan.LastDue();
 
 		return plan;
 	}
 
-	// Adds achievements that appeared after the plan was made (game updates), after the last scheduled one.
-	internal static int Extend(GamePlan plan, IReadOnlyList<AchievementDef> schema, IReadOnlyDictionary<string, double> percents, BotSettings settings, int windowMinutesPerDay, Random random) {
+	// Adds achievements that appeared after the plan was made (game updates), counted from the current play time.
+	internal static int Extend(GamePlan plan, IReadOnlyList<AchievementDef> schema, IReadOnlyDictionary<string, double> percents, BotSettings settings, Random random) {
 		ArgumentNullException.ThrowIfNull(plan);
 		ArgumentNullException.ThrowIfNull(schema);
 		ArgumentNullException.ThrowIfNull(percents);
@@ -77,32 +74,15 @@ internal static class Planner {
 		ArgumentNullException.ThrowIfNull(random);
 
 		HashSet<string> known = plan.Steps.Select(static s => s.ApiName).ToHashSet(StringComparer.Ordinal);
-		List<(AchievementDef Def, double Percent)> added = [];
-
-		foreach (AchievementDef def in schema) {
-			if (def.Protected || def.Unlocked || known.Contains(def.ApiName)) {
-				continue;
-			}
-
-			double percent = PercentOf(def.ApiName, percents);
-
-			if ((settings.SkipRarerThan > 0) && percents.ContainsKey(def.ApiName) && (percent < settings.SkipRarerThan)) {
-				continue;
-			}
-
-			added.Add((def, percent));
-		}
+		List<(AchievementDef Def, double Percent)> added = Candidates(schema.Where(a => !a.Protected && !a.Unlocked && !known.Contains(a.ApiName)), percents, settings, out _);
 
 		if (added.Count == 0) {
 			return 0;
 		}
 
-		// Roughly MinDays' worth of time per "full game", proportional to how many were added
-		double perAchievement = Math.Max((double) settings.MinDays * windowMinutesPerDay / Math.Max(plan.Steps.Count + added.Count, 1), settings.MinGapMinutes);
-		long start = Math.Max(plan.ActiveMinutes, plan.LastDue());
-
-		plan.Steps.AddRange(Schedule(added, perAchievement * added.Count, settings.MinGapMinutes, random, start));
+		plan.Steps.AddRange(Schedule(added, settings, random, plan.ActiveMinutes));
 		plan.TotalAchievements += added.Count;
+		plan.BudgetMinutes = plan.LastDue();
 		plan.CompletedUtc = null;
 
 		return added.Count;
@@ -110,26 +90,38 @@ internal static class Planner {
 
 	internal static double PercentOf(string apiName, IReadOnlyDictionary<string, double> percents) => Math.Min(Math.Max(percents.TryGetValue(apiName, out double p) && double.IsFinite(p) ? p : UnknownPercent, MinPercent), 100);
 
-	private static List<PlanStep> Schedule(List<(AchievementDef Def, double Percent)> items, double budget, int minGap, Random random, long startMinute) {
-		// Order: larger key first; key = Sharpness * ln(p) + Gumbel noise
-		List<(AchievementDef Def, double Percent)> ordered = items.Select(item => (item, Key: (Sharpness * Math.Log(item.Percent)) + Gumbel(random))).OrderByDescending(static x => x.Key).Select(static x => x.item).ToList();
+	private static List<(AchievementDef Def, double Percent)> Candidates(IEnumerable<AchievementDef> defs, IReadOnlyDictionary<string, double> percents, BotSettings settings, out int skippedRare) {
+		List<(AchievementDef Def, double Percent)> result = [];
+		skippedRare = 0;
 
-		// Tiered achievements ("30 matches" before "100 matches") always keep their natural order
-		ordered = Chains.Repair(ordered, static item => item.Def);
+		foreach (AchievementDef def in defs) {
+			double percent = PercentOf(def.ApiName, percents);
 
-		double[] gaps = ordered.Select(item => (1 + Math.Log(100 / item.Percent)) * Math.Exp(GapNoise * Normal(random))).ToArray();
-		double total = 0;
+			// Only skip on a known percentage; unknown ones are treated as average
+			if ((settings.SkipRarerThan > 0) && percents.ContainsKey(def.ApiName) && (percent < settings.SkipRarerThan)) {
+				skippedRare++;
 
-		foreach (double gap in gaps) {
-			total += gap;
+				continue;
+			}
+
+			result.Add((def, percent));
 		}
 
-		double scale = budget / total;
+		return result;
+	}
+
+	private static List<PlanStep> Schedule(List<(AchievementDef Def, double Percent)> items, BotSettings settings, Random random, long offsetMinutes) {
+		// Each achievement's own target, with noise
+		List<((AchievementDef Def, double Percent) Item, double Minutes)> targets = items.Select(item => (item, Minutes: offsetMinutes + (PlayHours(item.Percent, settings.PaceScale) * 60 * Math.Exp(Noise * Normal(random))))).OrderBy(static x => x.Minutes).ToList();
+
+		// Tier chains swap places among themselves; the times stay in rising order
+		List<(AchievementDef Def, double Percent)> ordered = Chains.Repair(targets.Select(static x => x.Item).ToList(), static item => item.Def);
 		List<PlanStep> steps = new(ordered.Count);
-		double due = startMinute;
+		double previous = double.MinValue;
 
 		for (int i = 0; i < ordered.Count; i++) {
-			due += Math.Max(gaps[i] * scale, minGap);
+			double due = Math.Max(targets[i].Minutes, previous + settings.MinGapMinutes);
+			previous = due;
 			(AchievementDef def, double percent) = ordered[i];
 
 			steps.Add(
@@ -146,8 +138,6 @@ internal static class Planner {
 
 		return steps;
 	}
-
-	private static double Gumbel(Random random) => -Math.Log(-Math.Log(Open01(random)));
 
 	// Box-Muller standard normal
 	private static double Normal(Random random) => Math.Sqrt(-2 * Math.Log(Open01(random))) * Math.Cos(2 * Math.PI * random.NextDouble());

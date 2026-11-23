@@ -85,6 +85,13 @@ internal sealed class BotWorker : IDisposable {
 		state.AutoPlaying.Clear();
 		state.AutoPlayStartedUtc = null;
 
+		// Unfinished plans from an older planner model are rebuilt from the account's current state.
+		// Achievements already unlocked on Steam stay unlocked and simply count as "already unlocked".
+		foreach (GamePlan old in state.Plans.Values.Where(static p => (p.Model < Planner.Model) && !p.IsCompleted).ToList()) {
+			state.Plans.Remove(old.AppId);
+			bot.ArchiLogger.LogGenericInfo(LogPrefix + Texts.Format(settings.Language, "log.replanModel", old.Name));
+		}
+
 		BotWorker worker = new(bot, stats, settings, state);
 		bot.ArchiLogger.LogGenericInfo(LogPrefix + Texts.Format(settings.Language, "log.started", state.Plans.Count, Texts.Get(settings.Language, settings.Simulation ? "word.simulation" : "word.real")));
 
@@ -184,7 +191,7 @@ internal sealed class BotWorker : IDisposable {
 			).ToList();
 
 			foreach (uint appId in output.NeedPlan) {
-				await CreatePlan(appId, window, now).ConfigureAwait(false);
+				await CreatePlan(appId, now).ConfigureAwait(false);
 			}
 
 			if (output.UnlockStep != null) {
@@ -281,14 +288,24 @@ internal sealed class BotWorker : IDisposable {
 		// On failure try again in 10 minutes rather than every tick
 		OwnedFetchedUtc = games != null ? now : now - OwnedMaxAge + TimeSpan.FromMinutes(10);
 
-		if (games != null) {
-			Owned = games.GroupBy(static g => g.AppId).ToDictionary(static g => g.Key, static g => g.First());
+		if (games == null) {
+			return;
+		}
+
+		Owned = games.GroupBy(static g => g.AppId).ToDictionary(static g => g.Key, static g => g.First());
+
+		// Steam's playtime also counts play outside ASF (or before the plugin): let the plans catch up with it
+		foreach (GamePlan plan in State.Plans.Values) {
+			if (!plan.IsCompleted && Owned.TryGetValue(plan.AppId, out OwnedGame? game) && (game.PlaytimeMinutes > plan.ActiveMinutes)) {
+				plan.ActiveMinutes = game.PlaytimeMinutes;
+				StateDirty = true;
+			}
 		}
 	}
 
 	// ---------------------------------------------------------------- plans
 
-	private async Task CreatePlan(uint appId, ActiveWindow window, DateTime now) {
+	private async Task CreatePlan(uint appId, DateTime now) {
 		string name = NameOf(appId);
 		(List<AchievementDef>? schema, _, _) = await ReadStats(appId).ConfigureAwait(false);
 
@@ -316,13 +333,13 @@ internal sealed class BotWorker : IDisposable {
 
 		PercentFailures.Remove(appId);
 
-		GamePlan plan = Planner.Create(appId, name, schema, percents, Settings, Math.Max(window.MinutesPerDay, 1), Random.Shared, now);
+		long playedMinutes = Owned.TryGetValue(appId, out OwnedGame? owned) ? owned.PlaytimeMinutes : 0;
+		GamePlan plan = Planner.Create(appId, name, schema, percents, Settings, playedMinutes, Random.Shared, now);
 		State.Plans[appId] = plan;
 		State.Library[appId] = new LibraryEntry { Unlockable = plan.Steps.Count, CheckedUtc = now };
 		StateDirty = true;
 
-		double days = (double) plan.BudgetMinutes / Math.Max(window.MinutesPerDay, 1);
-		Bot.ArchiLogger.LogGenericInfo(LogPrefix + Texts.Format(Lang, "log.planCreated", name, plan.Steps.Count, Math.Round(days), plan.ProtectedCount, plan.UnlockedBefore, plan.SkippedRare));
+		Bot.ArchiLogger.LogGenericInfo(LogPrefix + Texts.Format(Lang, "log.planCreated", name, plan.Steps.Count, Math.Round(plan.BudgetMinutes / 60.0), plan.ProtectedCount, plan.UnlockedBefore, plan.SkippedRare));
 	}
 
 	// Reads the account's stats for a game. Schema is null when Steam did not answer.
@@ -786,8 +803,7 @@ internal sealed class BotWorker : IDisposable {
 
 	private StatusDto StatusNow() {
 		DateTime now = DateTime.UtcNow;
-		_ = ActiveWindow.TryParse(Settings.ActiveHours, out ActiveWindow window);
-		double stretch = (double) ActiveWindow.MinutesInDay / Math.Max(window.MinutesPerDay, 1);
+		const double stretch = 1; // plan minutes are minutes of play
 		HashSet<uint> playing = PlayingSnapshot.Select(static p => p.AppId).ToHashSet();
 		HashSet<uint> slots = PlayingSnapshot.Where(static p => p.InSlot).Select(static p => p.AppId).ToHashSet();
 
@@ -857,8 +873,7 @@ internal sealed class BotWorker : IDisposable {
 		return await Locked(
 			() => {
 				DateTime now = DateTime.UtcNow;
-				_ = ActiveWindow.TryParse(Settings.ActiveHours, out ActiveWindow window);
-				double stretch = (double) ActiveWindow.MinutesInDay / Math.Max(window.MinutesPerDay, 1);
+				const double stretch = 1; // plan minutes are minutes of play
 				GamePlan? plan = State.Plans.GetValueOrDefault(appId);
 				Dictionary<string, PlanStep> steps = plan?.Steps.ToDictionary(static s => s.ApiName, StringComparer.Ordinal) ?? [];
 

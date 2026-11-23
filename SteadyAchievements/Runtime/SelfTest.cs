@@ -99,7 +99,7 @@ internal static class SelfTest {
 		Check(plan.Steps.Count == 2, "steps");
 		Check(plan.Steps.Find(static s => s.ApiName == "A1")!.DueMinute < plan.Steps.Find(static s => s.ApiName == "A2")!.DueMinute, "tier order");
 		Check((plan.ProtectedCount == 1) && (plan.SkippedRare == 1), "counts");
-		Check(Planner.Extend(plan, [.. SampleSchema(), new("A6", "New", "", 1, 5, false, false, false, null, 0, "", "")], percents, settings, 900, Random.Shared) == 1, "extend");
+		Check(Planner.Extend(plan, [.. SampleSchema(), new("A6", "New", "", 1, 5, false, false, false, null, 0, "", "")], percents, settings, Random.Shared) == 1, "extend");
 		Check(plan.LastDue() > 0, "last due");
 	}
 

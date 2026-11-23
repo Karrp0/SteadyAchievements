@@ -486,7 +486,7 @@
 			const value = s[el.name];
 			if (el.type === "checkbox") el.checked = Boolean(value);
 			else if (LIST_NUMBERS.includes(el.name) || LIST_TEXT.includes(el.name)) el.value = (value || []).join(", ");
-			else el.value = value ?? "";
+			else el.value = value == null ? "" : String(value);
 		}
 		form.elements.mode.value = s.Simulation ? "sim" : "real";
 		const [from, to] = (s.ActiveHours || "10:00-01:00").split("-");
@@ -504,7 +504,7 @@
 			if (el.type === "checkbox") s[el.name] = el.checked;
 			else if (LIST_NUMBERS.includes(el.name)) s[el.name] = el.value.split(/[\s,;]+/).map(Number).filter(n => Number.isInteger(n) && n > 0);
 			else if (LIST_TEXT.includes(el.name)) s[el.name] = el.value.split(",").map(x => x.trim()).filter(Boolean);
-			else if (el.type === "number") s[el.name] = el.value === "" ? 0 : Number(el.value);
+			else if (el.type === "number" || "number" in el.dataset) s[el.name] = el.value === "" ? 0 : Number(el.value);
 			else s[el.name] = el.value.trim() === "" && el.name === "TimeZone" ? null : el.value.trim();
 		}
 		s.Simulation = form.elements.mode.value !== "real";

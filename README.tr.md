@@ -24,8 +24,8 @@
 
 ## Ne yapar?
 
-- **Doğal tempo:** Her oyunun kalan başarımları seçtiğin gün aralığına (varsayılan 30–50 gün) rastgele yayılır. Oyuncuların çoğunun açtığı başarımlar genelde önce, nadir olanlar sonra gelir. Nadir bir başarımdan önceki bekleme daha uzundur.
-- **Sadece oynanırken:** Plan sadece oyun gerçekten oynanırken (kart düşürme, `GamesPlayedWhileIdle` ya da otomatik oyun) ve senin belirlediğin **aktif saatlerde** ilerler.
+- **Doğal tempo:** Her başarım, oyuncuların yüzde kaçının açtığına göre belirli bir oynama süresinden sonra açılır. Normal tempoda oyuncuların %30'unun açtığı bir başarım yaklaşık 1 saat, %10'u 4 saat, %1'i 17 saat oynadıktan sonra gelir. Süreler her seferinde biraz değişir; oyunun Steam'deki mevcut oynama süresi de sayılır.
+- **Sadece oynanırken:** Plan sadece oyun gerçekten oynanırken (kart düşürme, `GamesPlayedWhileIdle` ya da otomatik oyun) ilerler. Oynama her saatte sayılır, ama başarımlar sadece belirlediğin **aktif saatlerde** açılır.
 - **Kademeli başarımlar:** "30 maç", "100 maç" gibi kademeler her zaman küçükten büyüğe açılır.
 - **Sınırlar:** İki başarım arasında her zaman bir en az süre bırakılır, günlük bir sınır da var. İstersen oyunda belli bir oynama süresi dolmadan hiç başlamaz, çok nadir başarımları da atlayabilir.
 - **Güvenlik filtreleri:**
@@ -93,7 +93,7 @@ Ayarlar her bot için ayrı tutulur: `config/SteadyAchievements/<bot>.settings.j
 | `Enabled` | `true` | Eklenti bu bot için açık mı. |
 | `Simulation` | `true` | Simülasyonda Steam'e hiçbir şey gönderilmez. |
 | `Language` | `tr` | Discord, komut yanıtları ve kayıt dili (`tr` / `en`). |
-| `MinDays` / `MaxDays` | `30` / `50` | Bir oyunun başarımlarının yayılacağı gün aralığı. |
+| `PaceScale` | `1` | Her başarımın arkasındaki oynama süresini çarpar: `0.5` çok hızlı, `0.75` hızlı, `1` normal, `1.5` yavaş, `2` çok yavaş (0.25–4 arası). |
 | `ActiveHours` | `10:00-01:00` | Başarımların açılabileceği saatler. Gece yarısını geçebilir; başlangıç ve bitiş aynıysa bütün gün. |
 | `TimeZone` | sunucu saati | IANA adı, ör. `Europe/Istanbul`. Sadece generic sürümde; kırpılmış sürümlerde sunucu saati kullanılır. |
 | `MaxActiveGames` | `2` | Aynı anda ilerleyen oyun sayısı. |
@@ -130,13 +130,13 @@ Sona bot adları eklenebilir, ör. `steady status ASF`. Komutlar ASF'de **Master
 
 ## Nasıl çalışır?
 
-Zaman "aktif dakika" ile ölçülür: oyunun aktif saatlerde oynandığı her dakika.
+Zaman oynama dakikasıyla ölçülür: oyunun oynandığı her dakika. Yeni bir plan oyunun Steam'deki mevcut oynama süresinden başlar.
 
-1. **Süre:** `MinDays` ile `MaxDays` arasında rastgele bir gün sayısı, günlük aktif dakikayla çarpılır. Sonra kalan başarımların oranıyla ölçeklenir; yarısı açılmış bir oyuna yaklaşık yarı süre ayrılır.
-2. **Sıra:** Her başarıma `1,35 · ln(yüzde) + Gumbel gürültüsü` değerinde bir anahtar verilir ve büyükten küçüğe sıralanır. Bu, yüzdesi yüksek olanları öne çeken ama sabit olmayan bir sıra verir.
+1. **Oynama süresi:** Her başarıma `0,8 · PaceScale · ln(100 / yüzde)²` saatlik bir hedef verilir (en az 6 dakika) ve log-normal gürültüyle çarpılır. Yüzdesi bilinmeyen başarımlar %50 sayılır.
+2. **Sıra:** Başarımlar hedeflerine göre sıralanır; yaygın olanlar genelde önce gelir ama yakın olanların yeri değişebilir.
 3. **Kademeler:** "30 maça gir" ile "100 maça gir" gibi kademeli başarımlar her zaman küçükten büyüğe açılır. Aynı sayaca bağlı olanlar sayacın hedefine göre, aynı cümlenin farklı sayılı halleri de içindeki sayıya göre sıralanır.
-4. **Aralıklar:** Bir başarımdan önceki bekleme `1 + ln(100 / yüzde)` ile orantılıdır ve log-normal gürültü eklenir. Aralıklar toplam süreyi dolduracak şekilde ölçeklenir ve hiçbiri `MinGapMinutes` değerinden kısa olmaz.
-5. **Her dakika:** Oynanan ve uygun olan oyunlar (en fazla `MaxActiveGames`) bir dakika ilerler. Vakti gelmiş en gecikmiş tek başarım açılır; en kısa aralık ve günlük sınır her zaman korunur.
+4. **Aralıklar:** Açılış zamanları bu sırayla hedefleri izler ve iki başarım arasında hiçbir zaman `MinGapMinutes` değerinden az süre olmaz.
+5. **Her dakika:** Oynanan ve uygun olan oyunlar (en fazla `MaxActiveGames`) bir dakika ilerler. Aktif saatlerdeyse vakti gelmiş en gecikmiş tek başarım açılır; en kısa aralık ve günlük sınır her zaman korunur.
 
 Bir başarım açılmadan hemen önce Steam'deki güncel durum tekrar okunur. Başarım zaten açıksa (örneğin oyunda açmışsan) atlanır. Steam hata verirse oyun 30 dakika bekletilir; aynı başarım 3 kez başarısız olursa atlanır.
 

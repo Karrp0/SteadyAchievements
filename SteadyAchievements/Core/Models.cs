@@ -66,13 +66,16 @@ internal sealed class PlanStep {
 }
 
 internal sealed class GamePlan {
+	// Planner model that built this plan (0 = the first, day-based model)
+	public int Model { get; set; }
+
 	public uint AppId { get; set; }
 	public string Name { get; set; } = "";
 	public DateTime CreatedUtc { get; set; }
 	public DateTime? CompletedUtc { get; set; }
 	public DateTime? LastUnlockUtc { get; set; }
 
-	// Minutes this game was played inside the active window since the plan was created.
+	// Minutes of play: the Steam playtime when the plan was made, plus every minute played since
 	public long ActiveMinutes { get; set; }
 
 	public long BudgetMinutes { get; set; }

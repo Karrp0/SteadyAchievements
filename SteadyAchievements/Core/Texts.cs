@@ -12,8 +12,7 @@ internal static class Texts {
 
 	private static readonly FrozenDictionary<string, (string Tr, string En)> Strings = new Dictionary<string, (string Tr, string En)>(StringComparer.Ordinal) {
 		// Validation
-		["val.minDays"] = ("En az gün 1 ile {0} arasında olmalı.", "Minimum days must be between 1 and {0}."),
-		["val.maxDays"] = ("En çok gün, en az günden küçük olamaz ve {0}'i geçemez.", "Maximum days must be at least the minimum and at most {0}."),
+		["val.pace"] = ("Tempo {0} ile {1} arasında olmalı.", "Pace must be between {0} and {1}."),
 		["val.activeHours"] = ("Aktif saatler SS:dd-SS:dd biçiminde olmalı (ör. 10:00-01:00).", "Active hours must look like HH:mm-HH:mm (e.g. 10:00-01:00)."),
 		["val.timeZone"] = ("Saat dilimi bulunamadı: {0}", "Unknown time zone: {0}"),
 		["val.maxActiveGames"] = ("Aynı anda oyun sayısı 1 ile {0} arasında olmalı.", "Games at once must be between 1 and {0}."),
@@ -42,7 +41,8 @@ internal static class Texts {
 		// Log
 		["log.started"] = ("Başladı ({0} plan yüklendi, mod: {1}).", "Started ({0} plans loaded, mode: {1})."),
 		["log.excluded"] = ("{0} ({1}) atlandı: {2}.", "Skipping {0} ({1}): {2}."),
-		["log.planCreated"] = ("{0} için plan hazır: {1} başarım, ~{2} gün oynamaya yayılacak ({3} korumalı, {4} zaten açık, {5} çok nadir atlandı).", "Plan ready for {0}: {1} achievements over ~{2} days of play ({3} protected, {4} already unlocked, {5} too rare skipped)."),
+		["log.planCreated"] = ("{0} için plan hazır: {1} başarım, toplam ~{2} saat oynamaya yayıldı ({3} korumalı, {4} zaten açık, {5} çok nadir atlandı).", "Plan ready for {0}: {1} achievements spread over ~{2} hours of play in total ({3} protected, {4} already unlocked, {5} too rare skipped)."),
+		["log.replanModel"] = ("{0} planı yeni tempo modeline göre yeniden kurulacak.", "The plan for {0} will be rebuilt with the new pace model."),
 		["log.planFailed"] = ("{0} ({1}) için plan yapılamadı; 30 dakika sonra tekrar denenecek.", "Could not plan {0} ({1}); retrying in 30 minutes."),
 		["log.simulated"] = ("[Simülasyon] Açılacaktı: \"{0}\" — {1} (%{2}).", "[Simulation] Would unlock \"{0}\" — {1} ({2}%)."),
 		["log.unlocked"] = ("Açıldı: \"{0}\" — {1} (%{2}).", "Unlocked \"{0}\" — {1} ({2}%)."),

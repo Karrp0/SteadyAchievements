@@ -24,8 +24,8 @@ A plugin for [ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm) (A
 
 ## What it does
 
-- **Natural pace:** each game's remaining achievements are spread randomly over your day range (30–50 days by default). Achievements most players have tend to come first, rare ones last. The wait before a rare achievement is longer.
-- **Only while played:** a plan only moves while the game is really being played (card farming, `GamesPlayedWhileIdle` or auto play) and inside your **active hours**.
+- **Natural pace:** each achievement unlocks after an amount of play that depends on how many players have it. At normal pace an achievement 30% of players have comes after about 1 hour of play, 10% after about 4 hours, 1% after about 17 hours. The times vary a little every time, and the game's existing Steam playtime counts too.
+- **Only while played:** a plan only moves while the game is really being played (card farming, `GamesPlayedWhileIdle` or auto play). Play counts at any hour, but achievements only unlock inside your **active hours**.
 - **Tiered achievements:** tiers such as "30 matches" and "100 matches" always unlock from the smallest to the largest.
 - **Limits:** there is always a minimum gap between achievements, plus a daily cap. Optionally it waits for a minimum playtime before starting a game, and it can skip very rare achievements.
 - **Safety filters:**
@@ -99,7 +99,7 @@ Settings are kept per bot in `config/SteadyAchievements/<bot>.settings.json`. Ch
 | `Enabled` | `true` | Whether the plugin is on for this bot. |
 | `Simulation` | `true` | In simulation nothing is sent to Steam. |
 | `Language` | `tr` | Language for Discord, command replies and log lines (`tr` / `en`). |
-| `MinDays` / `MaxDays` | `30` / `50` | Range of days a game's achievements are spread over. |
+| `PaceScale` | `1` | Multiplies the hours of play behind every achievement: `0.5` very fast, `0.75` fast, `1` normal, `1.5` slow, `2` very slow (allowed 0.25–4). |
 | `ActiveHours` | `10:00-01:00` | Hours in which achievements may unlock. The window may cross midnight; equal start and end means all day. |
 | `TimeZone` | server time | IANA id, e.g. `Europe/Istanbul`. Generic build only; trimmed builds use the server time. |
 | `MaxActiveGames` | `2` | How many games progress at the same time. |
@@ -136,13 +136,13 @@ You can add bot names at the end, e.g. `steady status ASF`. The commands need **
 
 ## How it works
 
-Time is measured in "active minutes": every minute in which the game is played inside the active hours.
+Time is measured in minutes of play: every minute in which the game is played. A new plan starts from the game's current Steam playtime.
 
-1. **Budget:** a random number of days between `MinDays` and `MaxDays`, times the active minutes per day. This is then scaled by the share of achievements still left, so a half-finished game gets about half the time.
-2. **Order:** each achievement gets the key `1.35 · ln(percent) + Gumbel noise`, and achievements are sorted from the largest key to the smallest. This favours common achievements without fixing the order.
+1. **Hours of play:** each achievement gets a target of `0.8 · PaceScale · ln(100 / percent)²` hours (at least 6 minutes), multiplied by log-normal noise. Achievements without a known percentage count as 50%.
+2. **Order:** achievements are sorted by their target, so common ones tend to come first, but close ones can swap places.
 3. **Tiers:** tiered achievements such as "Play 30 matches" and "Play 100 matches" always unlock from the smallest to the largest. Achievements driven by the same stat are ordered by the stat's target; the same sentence with different numbers is ordered by its number.
-4. **Gaps:** the wait before an achievement is proportional to `1 + ln(100 / percent)`, with log-normal noise. The gaps are scaled to fill the budget, and none is shorter than `MinGapMinutes`.
-5. **Every minute:** the eligible games being played (up to `MaxActiveGames`) advance one minute. The single most overdue achievement unlocks, always respecting the minimum gap and the daily cap.
+4. **Gaps:** due times follow the targets in that order, and two achievements are never closer than `MinGapMinutes`.
+5. **Every minute:** the eligible games being played (up to `MaxActiveGames`) advance one minute. Inside the active hours, the single most overdue achievement unlocks, always respecting the minimum gap and the daily cap.
 
 Right before an unlock, the account's current state is read from Steam again. If the achievement is already unlocked (for example because you earned it in game), it is skipped. If Steam returns an error, the game waits 30 minutes; if the same achievement fails 3 times, it is skipped.
 
