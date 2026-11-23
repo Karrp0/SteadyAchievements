@@ -225,6 +225,7 @@
 		$$("[data-title]").forEach(el => { el.title = t(el.dataset.title); el.setAttribute("aria-label", t(el.dataset.title)); });
 		$("#help").innerHTML = t("help.html");
 		$$("#lang-menu button").forEach(b => b.classList.toggle("active", b.dataset.locale === state.locale));
+		renderPace();
 		if (state.status) renderStatus();
 	}
 
@@ -494,6 +495,35 @@
 		form.elements.to.value = to.padStart(5, "0");
 		message($("#save-msg"), "");
 		showPickedNames();
+		renderPace();
+	}
+
+	// Same formula as Planner.PlayHours on the server: 0.8 · pace · ln(100 / percent)², at least 6 minutes
+	const PACE_PERCENTS = [50, 30, 10, 3, 1, 0.1];
+	const playHours = (percent, pace) => Math.max(0.1, 0.8 * pace * Math.log(100 / percent) ** 2);
+
+	function roughPlay(hours) {
+		const number = v => new Intl.NumberFormat(state.locale, { maximumFractionDigits: 1 }).format(v);
+		if (hours < 1) return "~" + t("time.min", Math.max(5, Math.round(hours * 12) * 5));
+		if (hours < 10) return "~" + t("time.hour", number(Math.round(hours * 2) / 2));
+		return "~" + t("time.hour", number(Math.round(hours)));
+	}
+
+	function renderPace() {
+		const box = $("#pace-ladder");
+		const select = $("#settings-form").elements.PaceScale;
+		if (!box || !select) return;
+		const pace = Number(select.value) || 1;
+		// Bars share one log scale up to the slowest choice, so switching the pace visibly grows or shrinks them
+		const top = Math.log1p(playHours(PACE_PERCENTS[PACE_PERCENTS.length - 1], 2));
+		box.replaceChildren(...PACE_PERCENTS.map(p => {
+			const hours = playHours(p, pace);
+			const width = Math.max(4, Math.round(Math.log1p(hours) / top * 100));
+			return h("div", { class: "ladder__step" },
+				h("span", { class: "ladder__percent" }, percent(p)),
+				h("span", { class: "ladder__time" }, roughPlay(hours)),
+				h("span", { class: "ladder__bar" }, h("i", { style: `width:${width}%` })));
+		}));
 	}
 
 	function collectSettings() {
@@ -791,6 +821,7 @@
 		});
 
 		$("#settings-form").addEventListener("submit", saveSettings);
+		$('[name="PaceScale"]').addEventListener("change", renderPace);
 		$$("[data-pick]").forEach(b => b.addEventListener("click", () => pickInto(b.dataset.pick)));
 		["Blacklist", "Allowlist"].forEach(name => $(`[name="${name}"]`).addEventListener("change", showPickedNames));
 		$("#idle-add").addEventListener("click", addIdle);
