@@ -801,16 +801,20 @@ internal sealed class BotWorker : IDisposable {
 
 	internal Task<StatusDto> BuildStatus() => Locked(StatusNow);
 
+	// Minutes until the bot-wide minimum gap after the last unlock has passed
+	private long FirstAllowedIn(DateTime now) => State.LastUnlockUtc is DateTime last ? (long) Math.Ceiling(Settings.MinGapMinutes - (now - last).TotalMinutes) : 0;
+
 	private StatusDto StatusNow() {
 		DateTime now = DateTime.UtcNow;
-		const double stretch = 1; // plan minutes are minutes of play
+		long firstAllowedIn = FirstAllowedIn(now);
 		HashSet<uint> playing = PlayingSnapshot.Select(static p => p.AppId).ToHashSet();
 		HashSet<uint> slots = PlayingSnapshot.Where(static p => p.InSlot).Select(static p => p.AppId).ToHashSet();
 
 		GameDto ToDto(GamePlan plan) {
-			PlanStep? next = plan.NextPending();
-			long last = plan.LastDue();
-			long? nextIn = next != null ? Math.Max(0, next.DueMinute - plan.ActiveMinutes) : null;
+			// Plan minutes are minutes of play; the ETAs assume the game keeps being played
+			List<(PlanStep Step, long Wait)> waits = plan.PendingWaits(Settings.MinGapMinutes, firstAllowedIn);
+			PlanStep? next = waits.Count > 0 ? waits[0].Step : null;
+			long? nextIn = waits.Count > 0 ? waits[0].Wait : null;
 
 			return new GameDto {
 				AppId = plan.AppId,
@@ -828,8 +832,8 @@ internal sealed class BotWorker : IDisposable {
 				NextName = next?.Name,
 				NextPercent = next?.Percent,
 				NextInMinutes = nextIn,
-				NextEtaUtc = nextIn is long n ? now.AddMinutes(n * stretch) : null,
-				EndEtaUtc = plan.IsCompleted ? null : now.AddMinutes(Math.Max(0, last - plan.ActiveMinutes) * stretch),
+				NextEtaUtc = nextIn is long n ? now.AddMinutes(n) : null,
+				EndEtaUtc = (plan.IsCompleted || (waits.Count == 0)) ? null : now.AddMinutes(waits[^1].Wait),
 				CreatedUtc = plan.CreatedUtc,
 				CompletedUtc = plan.CompletedUtc,
 				Playing = playing.Contains(plan.AppId),
@@ -873,9 +877,15 @@ internal sealed class BotWorker : IDisposable {
 		return await Locked(
 			() => {
 				DateTime now = DateTime.UtcNow;
-				const double stretch = 1; // plan minutes are minutes of play
 				GamePlan? plan = State.Plans.GetValueOrDefault(appId);
 				Dictionary<string, PlanStep> steps = plan?.Steps.ToDictionary(static s => s.ApiName, StringComparer.Ordinal) ?? [];
+				Dictionary<string, long> waits = new(StringComparer.Ordinal);
+
+				if (plan != null) {
+					foreach ((PlanStep step, long wait) in plan.PendingWaits(Settings.MinGapMinutes, FirstAllowedIn(now))) {
+						waits[step.ApiName] = wait;
+					}
+				}
 
 				List<AchievementDto> list = schema.Select(
 					def => {
@@ -891,7 +901,7 @@ internal sealed class BotWorker : IDisposable {
 								_ => "planned"
 							};
 
-						DateTime? eta = (step is { State: StepState.Pending } && (plan != null)) ? now.AddMinutes(Math.Max(0, step.DueMinute - plan.ActiveMinutes) * stretch) : null;
+						DateTime? eta = waits.TryGetValue(def.ApiName, out long wait) ? now.AddMinutes(wait) : null;
 
 						return new AchievementDto {
 							ApiName = def.ApiName,

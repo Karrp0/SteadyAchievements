@@ -93,7 +93,7 @@ Ayarlar her bot için ayrı tutulur: `config/SteadyAchievements/<bot>.settings.j
 | `Enabled` | `true` | Eklenti bu bot için açık mı. |
 | `Simulation` | `true` | Simülasyonda Steam'e hiçbir şey gönderilmez. |
 | `Language` | `tr` | Discord, komut yanıtları ve kayıt dili (`tr` / `en`). |
-| `PaceScale` | `1` | Her başarımın arkasındaki oynama süresini çarpar: `0.5` çok hızlı, `0.75` hızlı, `1` normal, `1.5` yavaş, `2` çok yavaş (0.25–4 arası). |
+| `PaceScale` | `1` | Her başarımın arkasındaki oynama süresini çarpar: `0.5` çok hızlı, `0.75` hızlı, `1` normal, `1.5` yavaş, `2` çok yavaş. Paneldeki **Özel** seçeneğinde %50'lik bir başarımın kaç dakika oynamada açılacağını yazarsın, diğer bütün süreler aynı oranla ayarlanır (0.04–30 arası). |
 | `ActiveHours` | `10:00-01:00` | Başarımların açılabileceği saatler. Gece yarısını geçebilir; başlangıç ve bitiş aynıysa bütün gün. |
 | `TimeZone` | sunucu saati | IANA adı, ör. `Europe/Istanbul`. Sadece generic sürümde; kırpılmış sürümlerde sunucu saati kullanılır. |
 | `MaxActiveGames` | `2` | Aynı anda ilerleyen oyun sayısı. |

@@ -11,6 +11,7 @@ namespace SteadyAchievements.Core;
 // 1) Target: an achievement that p% of players have is due after about
 //        PlayHours(p) = HoursFactor * PaceScale * ln(100 / p)^2   hours of play
 //    At normal pace: 80% → minutes, 30% → ~1 h, 10% → ~4 h, 1% → ~17 h, 0.01% → ~68 h.
+//    The floor (MinHours) scales with the pace too, so every time is exactly proportional to PaceScale.
 //    Log-normal noise makes every plan different.
 // 2) Order: by target, so common achievements come first; tiered chains ("30 matches" before
 //    "100 matches") always keep their natural order.
@@ -28,7 +29,7 @@ internal static class Planner {
 	internal static double PlayHours(double percent, double paceScale) {
 		double surprise = Math.Log(100 / Math.Min(Math.Max(percent, MinPercent), 100));
 
-		return Math.Max(MinHours, HoursFactor * paceScale * surprise * surprise);
+		return paceScale * Math.Max(MinHours, HoursFactor * surprise * surprise);
 	}
 
 	internal static GamePlan Create(uint appId, string name, IReadOnlyList<AchievementDef> schema, IReadOnlyDictionary<string, double> percents, BotSettings settings, long playedMinutes, Random random, DateTime nowUtc) {

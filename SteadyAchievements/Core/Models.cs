@@ -97,6 +97,25 @@ internal sealed class GamePlan {
 		return last;
 	}
 
+	// Minutes from now until each pending step unlocks, in order. A step waits for its due minute and for
+	// the minimum gap after the previous one, so a plan that is already behind (a game with lots of Steam
+	// playtime) shows when the catch-up really ends instead of "now".
+	internal List<(PlanStep Step, long Wait)> PendingWaits(int minGapMinutes, long firstAllowedIn) {
+		List<PlanStep> pending = Steps.FindAll(static s => s.State == StepState.Pending);
+		pending.Sort(static (a, b) => a.DueMinute.CompareTo(b.DueMinute));
+
+		List<(PlanStep Step, long Wait)> result = new(pending.Count);
+		long earliest = Math.Max(0, firstAllowedIn);
+
+		foreach (PlanStep step in pending) {
+			long wait = Math.Max(step.DueMinute - ActiveMinutes, earliest);
+			result.Add((step, wait));
+			earliest = wait + minGapMinutes;
+		}
+
+		return result;
+	}
+
 	internal PlanStep? NextPending() {
 		PlanStep? next = null;
 

@@ -84,6 +84,17 @@ public sealed class PlannerTests {
 	}
 
 	[TestMethod]
+	public void CustomPaceIsProportionalEvenForCommonAchievements() {
+		// The panel's custom pace: a 50% achievement after 1 minute; every other time follows the same ratio
+		double pace = 1 / 60.0 / Planner.PlayHours(50, 1);
+
+		Assert.AreEqual(1 / 60.0, Planner.PlayHours(50, pace), 1e-9);
+		Assert.AreEqual(Planner.PlayHours(80, 1) * pace, Planner.PlayHours(80, pace), 1e-12);
+		Assert.AreEqual(Planner.PlayHours(0.01, 1) / Planner.PlayHours(50, 1) / 60, Planner.PlayHours(0.01, pace), 1e-9);
+		Assert.IsTrue(pace >= BotSettings.MinPace);
+	}
+
+	[TestMethod]
 	public void DueTimesRiseWithRarityAndKeepTheGap() {
 		List<AchievementDef> schema = Enumerable.Range(0, 40).Select(static i => Def($"a{i}")).ToList();
 		Dictionary<string, double> percents = schema.Select((a, i) => (a.ApiName, P: 80.0 / (i + 1))).ToDictionary(static x => x.ApiName, static x => x.P);
@@ -149,6 +160,23 @@ public sealed class PlannerTests {
 
 		CollectionAssert.AreEquivalent(new[] { "a2", "a3" }, plan.Steps.Select(static s => s.ApiName).ToArray());
 		Assert.AreEqual(1, plan.SkippedRare);
+	}
+
+	[TestMethod]
+	public void CatchUpWaitsRespectTheGap() {
+		// 370 h of Steam playtime: every step is already due, so they unlock one gap apart, not all "now"
+		GamePlan plan = Planner.Create(1, "G", [Def("a1"), Def("a2"), Def("a3")], new Dictionary<string, double> { ["a1"] = 60, ["a2"] = 20, ["a3"] = 5 }, Settings(), 370 * 60, new Random(1), DateTime.UtcNow);
+
+		List<(PlanStep Step, long Wait)> waits = plan.PendingWaits(20, 5);
+
+		CollectionAssert.AreEqual(new long[] { 5, 25, 45 }, waits.Select(static w => w.Wait).ToArray());
+	}
+
+	[TestMethod]
+	public void FutureStepsWaitForTheirDueMinute() {
+		GamePlan plan = new() { ActiveMinutes = 100, Steps = [new PlanStep { ApiName = "a", DueMinute = 160 }, new PlanStep { ApiName = "b", DueMinute = 170 }, new PlanStep { ApiName = "c", DueMinute = 90, State = StepState.Done }] };
+
+		CollectionAssert.AreEqual(new long[] { 60, 80 }, plan.PendingWaits(20, 0).Select(static w => w.Wait).ToArray());
 	}
 
 	[TestMethod]
@@ -396,7 +424,7 @@ public sealed class SettingsTests {
 
 	[TestMethod]
 	public void CatchesBadValues() {
-		BotSettings s = new() { PaceScale = 9, ActiveHours = "x", MaxActiveGames = 0, DiscordWebhook = "https://evil.example/api/webhooks/1" };
+		BotSettings s = new() { PaceScale = 99, ActiveHours = "x", MaxActiveGames = 0, DiscordWebhook = "https://evil.example/api/webhooks/1" };
 
 		Assert.AreEqual(4, s.Validate(Clock.IsValidTimeZone).Count);
 	}

@@ -375,7 +375,9 @@
 		const progressed = g.Done + g.Simulated + g.Skipped;
 		const pct = g.Planned ? Math.round((progressed / g.Planned) * 100) : 100;
 
-		const details = [`${progressed}/${g.Planned}${simulation && g.Simulated ? ` (${t("game.simulated")})` : ""}`, `${duration(g.ActiveMinutes)} / ${duration(g.BudgetMinutes)}`];
+		const details = [`${progressed}/${g.Planned}${simulation && g.Simulated ? ` (${t("game.simulated")})` : ""}`];
+		// BudgetMinutes is the minute of play at which the last achievement is due
+		const left = Math.max(0, g.BudgetMinutes - g.ActiveMinutes);
 		if (g.Protected) details.push(`${g.Protected} ${t("game.protected")}`);
 		if (g.UnlockedBefore) details.push(`${g.UnlockedBefore} ${t("game.before")}`);
 		if (g.SkippedRare) details.push(`${g.SkippedRare} ${t("game.rare")}`);
@@ -386,6 +388,9 @@
 				h("div", { class: "row__name" }, g.Name, !g.InSlot ? h("span", { class: "muted small" }, ` · ${t("game.paused")}`) : null),
 				h("div", { class: "progress", title: `${pct}%` }, h("span", { style: `width:${pct}%` })),
 				h("div", { class: "muted small" }, details.join(" · ")),
+				h("div", { class: "small play-total" },
+					...t("game.allIn").split("{0}").flatMap((part, i) => i ? [h("strong", {}, playTime(g.BudgetMinutes, true)), part] : [part]),
+					h("span", { class: "muted" }, ` · ${t("game.played", playTime(g.ActiveMinutes))} · ${left > 0 ? t("game.playLeft", playTime(left, true)) : t("game.playDue")}`)),
 				g.NextName ? h("div", { class: "small" },
 					`${t("game.next")}: `, h("strong", {}, g.NextName), ` ${percent(g.NextPercent)}`,
 					h("span", { class: "muted" }, g.InSlot ? ` · ${relative(g.NextEtaUtc)} · ${t("game.end")} ${dateTime(g.EndEtaUtc)}` : "")
@@ -495,33 +500,56 @@
 		form.elements.to.value = to.padStart(5, "0");
 		message($("#save-msg"), "");
 		showPickedNames();
+		fillPace(s.PaceScale);
+	}
+
+	// Same formula as Planner.PlayHours on the server: pace · max(0.1, 0.8 · ln(100 / percent)²) hours of play
+	const PACE_PERCENTS = [50, 30, 10, 1, 0.1, 0.01];
+	const playHours = (percent, pace) => pace * Math.max(0.1, 0.8 * Math.log(100 / Math.max(percent, 0.01)) ** 2);
+	// Minutes of play a 50% achievement needs at pace 1; the custom pace is entered as minutes for that one
+	const HALF_MINUTES = playHours(50, 1) * 60;
+
+	// Hours of play as text; always hours (never days), since these are hours of play, not calendar time
+	function playTime(minutes, approx = false) {
+		const number = v => new Intl.NumberFormat(state.locale, { maximumFractionDigits: 1 }).format(v);
+		let text;
+		if (minutes < 59.5) text = t("time.min", approx ? Math.max(1, minutes < 10 ? Math.round(minutes) : Math.round(minutes / 5) * 5) : Math.round(minutes));
+		else if (minutes < 600) text = t("time.hour", number(approx ? Math.round(minutes / 30) / 2 : Math.round(minutes / 6) / 10));
+		else text = t("time.hour", number(Math.round(minutes / 60)));
+		return approx ? "~" + text : text;
+	}
+
+	function fillPace(pace) {
+		const select = $("#settings-form").elements.PaceScale;
+		const preset = [...select.options].find(o => o.value !== "custom" && Math.abs(Number(o.value) - pace) < 1e-6);
+		select.value = preset ? preset.value : "custom";
+		if (!preset) $("#pace-minutes").value = String(Math.round(pace * HALF_MINUTES * 10) / 10);
 		renderPace();
 	}
 
-	// Same formula as Planner.PlayHours on the server: 0.8 · pace · ln(100 / percent)², at least 6 minutes
-	const PACE_PERCENTS = [50, 30, 10, 3, 1, 0.1];
-	const playHours = (percent, pace) => Math.max(0.1, 0.8 * pace * Math.log(100 / percent) ** 2);
-
-	function roughPlay(hours) {
-		const number = v => new Intl.NumberFormat(state.locale, { maximumFractionDigits: 1 }).format(v);
-		if (hours < 1) return "~" + t("time.min", Math.max(5, Math.round(hours * 12) * 5));
-		if (hours < 10) return "~" + t("time.hour", number(Math.round(hours * 2) / 2));
-		return "~" + t("time.hour", number(Math.round(hours)));
+	function currentPace() {
+		const select = $("#settings-form").elements.PaceScale;
+		if (select.value !== "custom") return Number(select.value) || 1;
+		const minutes = Number($("#pace-minutes").value);
+		return minutes > 0 ? minutes / HALF_MINUTES : 1;
 	}
 
 	function renderPace() {
 		const box = $("#pace-ladder");
 		const select = $("#settings-form").elements.PaceScale;
 		if (!box || !select) return;
-		const pace = Number(select.value) || 1;
-		// Bars share one log scale up to the slowest choice, so switching the pace visibly grows or shrinks them
+		const custom = select.value === "custom";
+		$("#pace-custom").hidden = !custom;
+		if (custom && !$("#pace-minutes").value) $("#pace-minutes").value = String(Math.round(HALF_MINUTES));
+		const pace = currentPace();
+		// Bars share one log scale up to the slowest preset, so switching the pace visibly grows or shrinks them
 		const top = Math.log1p(playHours(PACE_PERCENTS[PACE_PERCENTS.length - 1], 2));
 		box.replaceChildren(...PACE_PERCENTS.map(p => {
 			const hours = playHours(p, pace);
-			const width = Math.max(4, Math.round(Math.log1p(hours) / top * 100));
+			const width = Math.min(100, Math.max(4, Math.round(Math.log1p(hours) / top * 100)));
 			return h("div", { class: "ladder__step" },
 				h("span", { class: "ladder__percent" }, percent(p)),
-				h("span", { class: "ladder__time" }, roughPlay(hours)),
+				h("span", { class: "ladder__time" }, playTime(hours * 60, true)),
 				h("span", { class: "ladder__bar" }, h("i", { style: `width:${width}%` })));
 		}));
 	}
@@ -537,6 +565,7 @@
 			else if (el.type === "number" || "number" in el.dataset) s[el.name] = el.value === "" ? 0 : Number(el.value);
 			else s[el.name] = el.value.trim() === "" && el.name === "TimeZone" ? null : el.value.trim();
 		}
+		s.PaceScale = currentPace();
 		s.Simulation = form.elements.mode.value !== "real";
 		s.ActiveHours = `${form.elements.from.value}-${form.elements.to.value}`;
 		return s;
@@ -822,6 +851,7 @@
 
 		$("#settings-form").addEventListener("submit", saveSettings);
 		$('[name="PaceScale"]').addEventListener("change", renderPace);
+		$("#pace-minutes").addEventListener("input", renderPace);
 		$$("[data-pick]").forEach(b => b.addEventListener("click", () => pickInto(b.dataset.pick)));
 		["Blacklist", "Allowlist"].forEach(name => $(`[name="${name}"]`).addEventListener("change", showPickedNames));
 		$("#idle-add").addEventListener("click", addIdle);

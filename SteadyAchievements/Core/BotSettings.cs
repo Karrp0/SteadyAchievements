@@ -7,8 +7,9 @@ namespace SteadyAchievements.Core;
 // Per-bot settings, stored in config/SteadyAchievements/<bot>.settings.json and edited from the panel.
 // Plain mutable properties keep JSON round-trips simple; always Normalize() + Validate() before use.
 public sealed class BotSettings {
-	internal const double MinPace = 0.25;
-	internal const double MaxPace = 4;
+	// Wide enough for the panel's custom pace: a 50% achievement after 1 minute up to ~11 hours of play
+	internal const double MinPace = 0.04;
+	internal const double MaxPace = 30;
 	internal const int MaxActiveGamesLimit = 10;
 
 	// How it runs

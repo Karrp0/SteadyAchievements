@@ -657,3 +657,20 @@ window.I18N = {
 		if (help) window.I18N[locale]["help.html"] = help.replace(/<li>[\s\S]*?<\/li>/, plan[locale]);
 	}
 })();
+
+// Custom pace and the "all achievements after ~N hours of play" line on games
+(() => {
+	const keys = ["set.speed.custom", "set.customLabel", "set.customHelp", "game.allIn", "game.played", "game.playLeft", "game.playDue"];
+	const texts = {
+		"tr-TR": ["Özel", "%50'lik bir başarım için oynama (dk)", "Oyuncuların yarısının açtığı bir başarımın kaç dakika oynadıktan sonra açılacağını yaz; diğer bütün süreler aynı oranla ayarlanır. İki başarım arası en az süre yine geçerlidir.", "Tüm başarımlar {0} oynamada biter", "{0} oynandı", "{0} kaldı", "vakti gelenler sırayla açılıyor"],
+		"en-US": ["Custom", "Play for a 50% achievement (min)", "Enter after how many minutes of play an achievement half of the players have should unlock; every other time follows the same ratio. The minimum gap between achievements still applies.", "All achievements after {0} of play", "{0} played", "{0} left", "due ones are unlocking in turn"],
+		"de-DE": ["Benutzerdefiniert", "Spielzeit für einen 50-%-Erfolg (Min.)", "Gib an, nach wie vielen Minuten Spielzeit ein Erfolg, den die Hälfte der Spieler hat, freigeschaltet wird; alle anderen Zeiten folgen im selben Verhältnis. Der Mindestabstand zwischen Erfolgen gilt weiterhin.", "Alle Erfolge nach {0} Spielzeit", "{0} gespielt", "noch {0}", "fällige werden nacheinander freigeschaltet"],
+		"es-ES": ["Personalizado", "Juego para un logro del 50 % (min)", "Indica tras cuántos minutos de juego se desbloquea un logro que tiene la mitad de los jugadores; todos los demás tiempos siguen la misma proporción. El intervalo mínimo entre logros sigue aplicándose.", "Todos los logros tras {0} de juego", "{0} jugado", "quedan {0}", "los pendientes se desbloquean por turnos"],
+		"fr-FR": ["Personnalisé", "Jeu pour un succès à 50 % (min)", "Indique après combien de minutes de jeu un succès que la moitié des joueurs possède se débloque ; toutes les autres durées suivent la même proportion. L'écart minimum entre succès s'applique toujours.", "Tous les succès après {0} de jeu", "{0} joué", "reste {0}", "les succès dus se débloquent tour à tour"],
+		"pl-PL": ["Własne", "Gra dla osiągnięcia 50% (min)", "Podaj, po ilu minutach gry ma się odblokować osiągnięcie, które ma połowa graczy; wszystkie inne czasy zmienią się w tej samej proporcji. Minimalny odstęp między osiągnięciami nadal obowiązuje.", "Wszystkie osiągnięcia po {0} gry", "zagrano {0}", "zostało {0}", "zaległe odblokowują się po kolei"],
+		"pt-BR": ["Personalizado", "Jogo para uma conquista de 50% (min)", "Informe após quantos minutos de jogo uma conquista que metade dos jogadores tem deve ser desbloqueada; todos os outros tempos seguem a mesma proporção. O intervalo mínimo entre conquistas continua valendo.", "Todas as conquistas após {0} de jogo", "{0} jogado", "faltam {0}", "as pendentes são desbloqueadas uma a uma"],
+		"ru-RU": ["Своё", "Игра для достижения с 50% (мин)", "Укажите, через сколько минут игры должно открываться достижение, которое есть у половины игроков; все остальные сроки изменятся в той же пропорции. Минимальный интервал между достижениями сохраняется.", "Все достижения через {0} игры", "сыграно {0}", "осталось {0}", "просроченные открываются по очереди"],
+		"zh-CN": ["自定义", "50% 成就所需游戏时长（分钟）", "填写一半玩家拥有的成就在游戏多少分钟后解锁；其他所有时间按相同比例调整。成就之间的最小间隔仍然有效。", "全部成就约需游戏 {0}", "已玩 {0}", "剩余 {0}", "到期的成就正依次解锁"]
+	};
+	for (const [locale, list] of Object.entries(texts)) keys.forEach((key, i) => { window.I18N[locale][key] = list[i]; });
+})();

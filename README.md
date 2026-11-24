@@ -99,7 +99,7 @@ Settings are kept per bot in `config/SteadyAchievements/<bot>.settings.json`. Ch
 | `Enabled` | `true` | Whether the plugin is on for this bot. |
 | `Simulation` | `true` | In simulation nothing is sent to Steam. |
 | `Language` | `tr` | Language for Discord, command replies and log lines (`tr` / `en`). |
-| `PaceScale` | `1` | Multiplies the hours of play behind every achievement: `0.5` very fast, `0.75` fast, `1` normal, `1.5` slow, `2` very slow (allowed 0.25–4). |
+| `PaceScale` | `1` | Multiplies the hours of play behind every achievement: `0.5` very fast, `0.75` fast, `1` normal, `1.5` slow, `2` very slow. **Custom** in the panel: enter the minutes of play for a 50% achievement and every other time scales by the same ratio (allowed 0.04–30). |
 | `ActiveHours` | `10:00-01:00` | Hours in which achievements may unlock. The window may cross midnight; equal start and end means all day. |
 | `TimeZone` | server time | IANA id, e.g. `Europe/Istanbul`. Generic build only; trimmed builds use the server time. |
 | `MaxActiveGames` | `2` | How many games progress at the same time. |

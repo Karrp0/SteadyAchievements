@@ -140,9 +140,14 @@
 								<option value="1" data-i18n="set.speed.1" selected></option>
 								<option value="1.5" data-i18n="set.speed.1.5"></option>
 								<option value="2" data-i18n="set.speed.2"></option>
+								<option value="custom" data-i18n="set.speed.custom"></option>
 							</select>
-							<span class="form-item__description" data-i18n="set.speedHelp"></span>
 						</label>
+						<label class="form-item" id="pace-custom" hidden><span class="form-item__label" data-i18n="set.customLabel"></span>
+							<input class="form-item__input input--medium" type="number" id="pace-minutes" min="1" max="690" step="any" value="23">
+							<span class="form-item__description" data-i18n="set.customHelp"></span>
+						</label>
+						<p class="form-item__description" data-i18n="set.speedHelp"></p>
 						<div class="ladder" id="pace-ladder" aria-live="polite"></div>
 						<div class="grid">
 							<label class="form-item"><span class="form-item__label" data-i18n="set.from"></span><input class="form-item__input" type="time" name="from" required></label>
